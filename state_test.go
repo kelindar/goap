@@ -9,15 +9,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestStateOf(t *testing.T) {
-	state := StateOf("A", "B", "C")
-	assert.Equal(t, 3, len(state))
-	assert.True(t, state.Has("A"))
-	assert.True(t, state.Has("B"))
-	assert.True(t, state.Has("C"))
-	assert.False(t, state.Has("D"))
-}
-
 func TestHasAll(t *testing.T) {
 	state1 := StateOf("A", "B", "C")
 	state2 := StateOf("A", "B")
@@ -62,11 +53,8 @@ func TestStateApply(t *testing.T) {
 	state2 := StateOf("D", "E")
 	state1.Apply(state2)
 
-	assert.True(t, state1.Has("A"))
-	assert.True(t, state1.Has("B"))
-	assert.True(t, state1.Has("C"))
-	assert.True(t, state1.Has("D"))
-	assert.True(t, state1.Has("E"))
+	expect := StateOf("A", "B", "C", "D", "E")
+	assert.True(t, state1.HasAll(expect))
 }
 
 func TestDistance(t *testing.T) {

@@ -6,7 +6,6 @@ package goap
 import (
 	"container/heap"
 	"errors"
-	"fmt"
 )
 
 // FindPlan finds a plan using the A* algorithm.
@@ -42,12 +41,8 @@ func FindPlan(start, goal State, actions []Action) (*Plan, error) {
 				continue
 			}
 
-			fmt.Println("current state", current.state.String())
-
 			newState := current.state.Clone()
 			newState.Apply(action.Outcome())
-
-			fmt.Println("new state", newState.String())
 
 			if _, found := closedSet[newState.Hash()]; found {
 				continue

@@ -13,10 +13,10 @@ func TestFindPlan(t *testing.T) {
 	start := StateOf("A", "B")
 	goal := StateOf("C", "D")
 	actions := []Action{
-		actionOf("Move A to C", 1.0, StateOf("A"), StateOf("C")),
-		actionOf("Move A to D", 1.0, StateOf("A"), StateOf("D")),
-		actionOf("Move B to C", 1.0, StateOf("B"), StateOf("C")),
-		actionOf("Move B to D", 1.0, StateOf("B"), StateOf("D")),
+		actionOf("Move A to C", 1.0, StateOf("A"), StateOf("!A", "C")),
+		actionOf("Move A to D", 1.0, StateOf("A"), StateOf("!A", "D")),
+		actionOf("Move B to C", 1.0, StateOf("B"), StateOf("!B", "C")),
+		actionOf("Move B to D", 1.0, StateOf("B"), StateOf("!B", "D")),
 	}
 
 	plan, err := FindPlan(start, goal, actions)
@@ -31,8 +31,8 @@ func TestNoPlanFound(t *testing.T) {
 	start := StateOf("A", "B")
 	goal := StateOf("C", "D")
 	actions := []Action{
-		actionOf("Move A to C", 1.0, StateOf("A"), StateOf("C")),
-		actionOf("Move B to C", 1.0, StateOf("B"), StateOf("C")),
+		actionOf("Move A to C", 1.0, StateOf("A"), StateOf("!A", "C")),
+		actionOf("Move B to C", 1.0, StateOf("B"), StateOf("!B", "C")),
 	}
 
 	plan, err := FindPlan(start, goal, actions)
