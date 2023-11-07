@@ -65,8 +65,8 @@ func (s *State) Add(fact string) {
 }
 
 // Remove removes a key from the state.
-func (s *State) Remove(key string) {
-	k, _ := factOf(key)
+func (s *State) Remove(fact string) {
+	k, _ := factOf(fact)
 	delete(*s, k)
 }
 
@@ -78,8 +78,8 @@ func (s *State) has(f fact, v bool) bool {
 	return false
 }
 
-// HasAll checks if the State contains all the keys from another State.
-func (s State) HasAll(other State) bool {
+// Has checks if the State contains all the keys from another State.
+func (s State) Has(other State) bool {
 	for f, v := range other {
 		if !s.has(f, v) {
 			return false

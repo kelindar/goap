@@ -14,12 +14,12 @@ func TestHasAll(t *testing.T) {
 	state2 := StateOf("A", "B")
 	state3 := StateOf("A", "B", "C", "D")
 
-	assert.True(t, state1.HasAll(state2))
-	assert.False(t, state2.HasAll(state1))
-	assert.True(t, state3.HasAll(state1))
-	assert.False(t, state1.HasAll(state3))
-	assert.True(t, state3.HasAll(state2))
-	assert.False(t, state2.HasAll(state3))
+	assert.True(t, state1.Has(state2))
+	assert.False(t, state2.Has(state1))
+	assert.True(t, state3.Has(state1))
+	assert.False(t, state1.Has(state3))
+	assert.True(t, state3.Has(state2))
+	assert.False(t, state2.Has(state3))
 }
 
 func TestStateEquals(t *testing.T) {
@@ -54,7 +54,7 @@ func TestStateApply(t *testing.T) {
 	state1.Apply(state2)
 
 	expect := StateOf("A", "B", "C", "D", "E")
-	assert.True(t, state1.HasAll(expect))
+	assert.True(t, state1.Has(expect))
 }
 
 func TestDistance(t *testing.T) {

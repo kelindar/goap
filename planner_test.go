@@ -62,7 +62,7 @@ func (a *testAction) Require() State {
 	return a.require
 }
 
-func (a *testAction) Outcome() State {
+func (a *testAction) Predict(_ State) State {
 	return a.outcome
 }
 

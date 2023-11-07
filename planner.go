@@ -6,7 +6,17 @@ package goap
 import (
 	"container/heap"
 	"errors"
+	"fmt"
 )
+
+type Action interface {
+	fmt.Stringer
+	Require() State
+	Predict(State) State
+	IsValid() bool
+	Perform() bool
+	Cost() float32
+}
 
 // FindPlan finds a plan using the A* algorithm.
 func FindPlan(start, goal State, actions []Action) (*Plan, error) {
@@ -26,7 +36,7 @@ func FindPlan(start, goal State, actions []Action) (*Plan, error) {
 		current := heap.Pop(openSet).(*node)
 
 		// If we reached the goal, reconstruct the path.
-		if current.state.HasAll(goal) {
+		if current.state.Has(goal) {
 			return reconstructPlan(current), nil
 		}
 
@@ -37,12 +47,13 @@ func FindPlan(start, goal State, actions []Action) (*Plan, error) {
 				continue
 			}
 
-			if !current.state.HasAll(action.Require()) {
+			if !current.state.Has(action.Require()) {
 				continue
 			}
 
+			outcome := action.Predict(current.state)
 			newState := current.state.Clone()
-			newState.Apply(action.Outcome())
+			newState.Apply(outcome)
 
 			if _, found := closedSet[newState.Hash()]; found {
 				continue
