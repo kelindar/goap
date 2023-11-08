@@ -11,20 +11,27 @@ import (
 
 /*
 cpu: 13th Gen Intel(R) Core(TM) i7-13700K
-BenchmarkState/has-24         	40704043	        29.80 ns/op	       0 B/op	       0 allocs/op
-BenchmarkState/add-24         	 6492904	       183.2 ns/op	     160 B/op	       6 allocs/op
-BenchmarkState/remove-24      	 6667255	       179.7 ns/op	     160 B/op	       6 allocs/op
-BenchmarkState/apply-24       	29957011	        40.14 ns/op	       0 B/op	       0 allocs/op
-BenchmarkState/distance-24    	30031682	        40.33 ns/op	       0 B/op	       0 allocs/op
-BenchmarkState/clone-24       	24900450	        49.15 ns/op	       0 B/op	       0 allocs/op
+BenchmarkState/clone-24         	11981906	       101.0 ns/op	     144 B/op	       2 allocs/op
+BenchmarkState/has-24           	39235688	        30.17 ns/op	       0 B/op	       0 allocs/op
+BenchmarkState/add-24           	 6542553	       187.3 ns/op	     160 B/op	       6 allocs/op
+BenchmarkState/remove-24        	 6646038	       178.7 ns/op	     160 B/op	       6 allocs/op
+BenchmarkState/apply-24         	28536843	        40.25 ns/op	       0 B/op	       0 allocs/op
+BenchmarkState/distance-24      	29706205	        40.97 ns/op	       0 B/op	       0 allocs/op
 */
 func BenchmarkState(b *testing.B) {
 	b.ReportAllocs()
 
+	b.Run("clone", func(b *testing.B) {
+		s1, s2 := StateOf("A", "B", "C", "D"), StateOf()
+		for i := 0; i < b.N; i++ {
+			s2 = s1.Clone()
+		}
+		assert.NotNil(b, s2)
+	})
+
 	b.Run("has", func(b *testing.B) {
 		state1 := StateOf("A", "B", "C")
 		state2 := StateOf("A", "B")
-		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			state1.Has(state2)
 		}
@@ -32,7 +39,6 @@ func BenchmarkState(b *testing.B) {
 
 	b.Run("add", func(b *testing.B) {
 		state := make(State, 0)
-		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			state.Add("A")
 		}
@@ -41,7 +47,6 @@ func BenchmarkState(b *testing.B) {
 	b.Run("remove", func(b *testing.B) {
 		state := make(State, 0)
 		state.Add("A")
-		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			state.Remove("A")
 		}
@@ -50,7 +55,6 @@ func BenchmarkState(b *testing.B) {
 	b.Run("apply", func(b *testing.B) {
 		state1 := StateOf("A", "B", "C")
 		state2 := StateOf("D", "E")
-		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			state1.Apply(state2)
 		}
@@ -59,17 +63,8 @@ func BenchmarkState(b *testing.B) {
 	b.Run("distance", func(b *testing.B) {
 		state1 := StateOf("A", "B", "C")
 		state2 := StateOf("A", "B", "D")
-		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			state1.Distance(state2)
-		}
-	})
-
-	b.Run("clone", func(b *testing.B) {
-		state := StateOf("A", "B", "C")
-		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
-			state.Clone()
 		}
 	})
 }
