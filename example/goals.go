@@ -1,5 +1,6 @@
 package main
 
+/*
 import "github.com/kelindar/goap"
 
 type RestAction struct{}
@@ -20,3 +21,4 @@ func (a RestAction) Execute() bool {
 	// Implementation: NPC rests
 	return true
 }
+*/

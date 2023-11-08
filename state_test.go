@@ -38,14 +38,14 @@ func BenchmarkState(b *testing.B) {
 	})
 
 	b.Run("add", func(b *testing.B) {
-		state := make(State, 0)
+		state := StateOf()
 		for i := 0; i < b.N; i++ {
 			state.Add("A")
 		}
 	})
 
 	b.Run("remove", func(b *testing.B) {
-		state := make(State, 0)
+		state := StateOf()
 		state.Add("A")
 		for i := 0; i < b.N; i++ {
 			state.Remove("A")
@@ -80,6 +80,16 @@ func TestHas(t *testing.T) {
 	assert.False(t, state1.Has(state3))
 	assert.True(t, state3.Has(state2))
 	assert.False(t, state2.Has(state3))
+}
+
+func TestStateHash(t *testing.T) {
+	state1 := StateOf("A", "B", "C")
+	state2 := StateOf("C", "B", "A")
+	state3 := StateOf("A", "B", "C", "D")
+
+	assert.Equal(t, state1.Hash(), state2.Hash())
+	assert.NotEqual(t, state1.Hash(), state3.Hash())
+	assert.NotEqual(t, state2.Hash(), state3.Hash())
 }
 
 func TestStateEquals(t *testing.T) {
@@ -134,14 +144,4 @@ func TestDistance(t *testing.T) {
 	assert.Equal(t, float32(0), state5.Distance(state1))
 	assert.Equal(t, float32(2), state2.Distance(state5))
 	assert.Equal(t, float32(0), state5.Distance(state2))
-}
-
-func TestStateHash(t *testing.T) {
-	state1 := StateOf("A", "B", "C")
-	state2 := StateOf("C", "B", "A")
-	state3 := StateOf("A", "B", "C", "D")
-
-	assert.Equal(t, state1.Hash(), state2.Hash())
-	assert.NotEqual(t, state1.Hash(), state3.Hash())
-	assert.NotEqual(t, state2.Hash(), state3.Hash())
 }
