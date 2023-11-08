@@ -9,22 +9,42 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestFindPlan(t *testing.T) {
+/*
+func TestSimplePlan(t *testing.T) {
+	start := StateOf("A", "B")
+	goal := StateOf("C", "D")
+	actions := []Action{
+		actionOf("Eat", 1.0, StateOf("hunger>50", "food>0"), StateOf("hunger-10", "food-1")),
+		actionOf("Forage", 1.0, StateOf("food<10"), StateOf("tired+5", "food+1")),
+		actionOf("Sleep", 1.0, StateOf("tired>50"), StateOf("tired-10")),
+
+		// WONDER IF THIS CAN BE DONE INSIDE THE Predict() and Require() functions
+	}
+
+	plan, err := Plan(start, goal, actions)
+	assert.NoError(t, err)
+	assert.NotNil(t, plan)
+	assert.Equal(t, 2, len(plan))
+	assert.Equal(t, "Move A to D", plan[0].String())
+	assert.Equal(t, "Move B to C", plan[1].String())
+}*/
+
+func TestSimplePlan(t *testing.T) {
 	start := StateOf("A", "B")
 	goal := StateOf("C", "D")
 	actions := []Action{
 		actionOf("Move A to C", 1.0, StateOf("A"), StateOf("!A", "C")),
-		actionOf("Move A to D", 1.0, StateOf("A"), StateOf("!A", "D")),
+		actionOf("Move A to D", 0.5, StateOf("A"), StateOf("!A", "D")),
 		actionOf("Move B to C", 1.0, StateOf("B"), StateOf("!B", "C")),
 		actionOf("Move B to D", 1.0, StateOf("B"), StateOf("!B", "D")),
 	}
 
-	plan, err := FindPlan(start, goal, actions)
+	plan, err := Plan(start, goal, actions)
 	assert.NoError(t, err)
 	assert.NotNil(t, plan)
-	assert.Equal(t, 2, len(plan.actions))
-	assert.Equal(t, "Move A to C", plan.actions[0].String())
-	assert.Equal(t, "Move B to D", plan.actions[1].String())
+	assert.Equal(t, 2, len(plan))
+	assert.Equal(t, "Move A to D", plan[0].String())
+	assert.Equal(t, "Move B to C", plan[1].String())
 }
 
 func TestNoPlanFound(t *testing.T) {
@@ -35,7 +55,7 @@ func TestNoPlanFound(t *testing.T) {
 		actionOf("Move B to C", 1.0, StateOf("B"), StateOf("!B", "C")),
 	}
 
-	plan, err := FindPlan(start, goal, actions)
+	plan, err := Plan(start, goal, actions)
 	assert.Error(t, err)
 	assert.Nil(t, plan)
 }

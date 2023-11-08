@@ -9,17 +9,28 @@ import (
 	"fmt"
 )
 
+// Action represents an action that can be performed.
 type Action interface {
 	fmt.Stringer
+
+	// Require returns the state that is required for this action to be performed.
 	Require() State
+
+	// Predict returns the state that is predicted to be the outcome of this action.
 	Predict(State) State
+
+	// IsValid checks if the action is valid.
 	IsValid() bool
+
+	// Perform performs the action and returns the outcome.
 	Perform() bool
+
+	// Cost returns the cost of performing the action.
 	Cost() float32
 }
 
-// FindPlan finds a plan using the A* algorithm.
-func FindPlan(start, goal State, actions []Action) (*Plan, error) {
+// Plan finds a plan to reach the goal from the start state using the provided actions.
+func Plan(start, goal State, actions []Action) ([]Action, error) {
 	openSet := &nodeHeap{}
 	heap.Init(openSet)
 	startNode := &node{
@@ -95,18 +106,19 @@ func FindPlan(start, goal State, actions []Action) (*Plan, error) {
 }
 
 // reconstructPlan reconstructs the plan from the goal node to the start node.
-func reconstructPlan(goalNode *node) *Plan {
-	var actions []Action
+func reconstructPlan(goalNode *node) []Action {
+	plan := make([]Action, 0, 8)
 	for n := goalNode; n != nil; n = n.parent {
 		if n.action != nil { // The start node has no action
-			actions = append(actions, n.action)
+			plan = append(plan, n.action)
 		}
 	}
+
 	// Reverse the slice of actions because we traversed the nodes from goal to start
-	for i, j := 0, len(actions)-1; i < j; i, j = i+1, j-1 {
-		actions[i], actions[j] = actions[j], actions[i]
+	for i, j := 0, len(plan)-1; i < j; i, j = i+1, j-1 {
+		plan[i], plan[j] = plan[j], plan[i]
 	}
-	return &Plan{actions: actions}
+	return plan
 }
 
 // ------------------------------------ Heap ------------------------------------
