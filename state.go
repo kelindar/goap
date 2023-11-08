@@ -49,7 +49,7 @@ func parseRule(s string) (fact, expr, error) {
 	}
 
 	key := [2]int{0, 0}   // [start, end]
-	value := float64(100) // default value
+	value := float32(100) // default value
 	op := opEqual         // default operator
 
 	var i int
@@ -62,7 +62,7 @@ func parseRule(s string) (fact, expr, error) {
 		}
 
 		op = opEqual
-		value = float64(0)
+		value = float32(0)
 		valueStr = "0"
 		key[0] = 1
 		i = 1
@@ -103,12 +103,12 @@ parseOperator:
 	valueStr = s[i:]
 
 	// Parse the floating-point value
-	value, err := strconv.ParseFloat(valueStr, 32)
+	val, err := strconv.ParseFloat(valueStr, 32)
 	if err != nil || value < valueMin || value > valueMax {
 		return 0, 0, fmt.Errorf("plan: invalid value '%s' in rule '%s'", valueStr, s)
 	}
 
-	return factOf(s[key[0]:key[1]]), exprOf(op, value), nil
+	return factOf(s[key[0]:key[1]]), exprOf(op, float32(val)), nil
 }
 
 // ------------------------------------ Effect ------------------------------------
@@ -155,7 +155,13 @@ func (o operator) String() string {
 type expr uint32
 
 // exprOf creates a new expression from an operator and a value.
-func exprOf(op operator, value float64) expr {
+func exprOf(op operator, value float32) expr {
+	if value < 0 {
+		value = 0
+	}
+	if value > 100 {
+		value = 100
+	}
 	return expr(uint32(op)<<28 | uint32(value*100))
 }
 
@@ -220,10 +226,12 @@ func (s State) Remove(rule string) error {
 	return nil
 }
 
-// has returns true if the state contains the fact with a given state.
-func (s State) has(f fact, x uint32) bool {
+func (s State) load(f fact) expr {
 	v, ok := s.m.Load(uint32(f))
-	return ok && v >= x
+	if !ok {
+		return exprOf(opEqual, 0)
+	}
+	return expr(v)
 }
 
 // Match checks if the State satisfies all the rules of the other state.
@@ -243,9 +251,9 @@ func (s State) Match(other State) (bool, error) {
 		case opEqual:
 			match = x.Value() == e.Value()
 		case opLess:
-			match = x.Value() <= e.Value()
+			match = x.Value() < e.Value()
 		case opGreater:
-			match = x.Value() >= e.Value()
+			match = x.Value() > e.Value()
 		default:
 			return fmt.Errorf("plan: cannot satisfy '%s%s', invalid operator '%s'", f.String(), e.String(), e.Operator().String())
 		}
@@ -266,14 +274,6 @@ func (s State) Match(other State) (bool, error) {
 	}
 }
 
-func (s State) load(f fact) expr {
-	v, ok := s.m.Load(uint32(f))
-	if !ok {
-		return exprOf(opEqual, 0)
-	}
-	return expr(v)
-}
-
 // Apply adds (applies) the keys from the effects to the state.
 func (s State) Apply(effects State) error {
 	return effects.m.RangeErr(func(k, v uint32) error {
@@ -290,14 +290,20 @@ func (s State) Apply(effects State) error {
 		case opEqual:
 			s.m.Store(k, e.Value())
 		case opIncrement:
-			s.m.Store(k, x.Value()+e.Value())
+			s.m.Store(k, uint32(exprOf(x.Operator(), x.Percent()+e.Percent())))
 		case opDecrement:
-			s.m.Store(k, x.Value()-e.Value())
+			s.m.Store(k, uint32(exprOf(x.Operator(), x.Percent()-e.Percent())))
 		default:
 			return fmt.Errorf("plan: cannot apply '%s%s', invalid predict operator '%s'", f.String(), e.String(), e.Operator().String())
 		}
 		return nil
 	})
+}
+
+// has returns true if the state contains the fact with a given state.
+func (s State) has(f fact, x uint32) bool {
+	v, ok := s.m.Load(uint32(f))
+	return ok && v >= x
 }
 
 // Distance estimates the distance to the goal state as the number of differing keys.
@@ -320,9 +326,8 @@ func (s State) Equals(other State) bool {
 
 // Hash returns a hash of the state.
 func (s State) Hash() (h uint64) {
-	s.m.Range(func(k, v uint32) bool {
-		h ^= (uint64(k) << 32) | uint64(v)
-		return true
+	s.m.RangeEach(func(k, v uint32) {
+		h ^= (uint64(k) << 32) | (uint64(v)*0xdeece66d + 0xb)
 	})
 	return
 }

@@ -9,25 +9,29 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-/*
-func TestSimplePlan(t *testing.T) {
-	start := StateOf("A", "B")
-	goal := StateOf("C", "D")
+func TestNumericPlan(t *testing.T) {
+	start := StateOf("hunger=80", "!food", "!tired")
+	goal := StateOf("food>80")
 	actions := []Action{
-		actionOf("Eat", 1.0, StateOf("hunger>50", "food>0"), StateOf("hunger-10", "food-1")),
-		actionOf("Forage", 1.0, StateOf("food<10"), StateOf("tired+5", "food+1")),
-		actionOf("Sleep", 1.0, StateOf("tired>50"), StateOf("tired-10")),
-
-		// WONDER IF THIS CAN BE DONE INSIDE THE Predict() and Require() functions
+		actionOf("Eat", 1.0, StateOf("food>0"), StateOf("hunger-50", "food-5")),
+		actionOf("Forage", 1.0, StateOf("tired<50"), StateOf("tired+20", "food+10", "hunger+5")),
+		actionOf("Sleep", 1.0, StateOf("tired>30"), StateOf("tired-50")),
 	}
 
 	plan, err := Plan(start, goal, actions)
 	assert.NoError(t, err)
-	assert.NotNil(t, plan)
-	assert.Equal(t, 2, len(plan))
-	assert.Equal(t, "Move A to D", plan[0].String())
-	assert.Equal(t, "Move B to C", plan[1].String())
-}*/
+	assert.Equal(t, []string{
+		"Forage",
+		"Forage",
+		"Forage",
+		"Forage",
+		"Forage",
+		"Forage",
+		"Forage",
+		"Forage",
+		"Forage",
+	}, planOf(plan))
+}
 
 func TestSimplePlan(t *testing.T) {
 	start := StateOf("A", "B")
@@ -41,10 +45,10 @@ func TestSimplePlan(t *testing.T) {
 
 	plan, err := Plan(start, goal, actions)
 	assert.NoError(t, err)
-	assert.NotNil(t, plan)
-	assert.Equal(t, 2, len(plan))
-	assert.Equal(t, "Move A to D", plan[0].String())
-	assert.Equal(t, "Move B to C", plan[1].String())
+	assert.Equal(t, []string{
+		"Move A to D",
+		"Move B to C",
+	}, planOf(plan))
 }
 
 func TestNoPlanFound(t *testing.T) {
@@ -58,6 +62,14 @@ func TestNoPlanFound(t *testing.T) {
 	plan, err := Plan(start, goal, actions)
 	assert.Error(t, err)
 	assert.Nil(t, plan)
+}
+
+func planOf(plan []Action) []string {
+	var result []string
+	for _, action := range plan {
+		result = append(result, action.String())
+	}
+	return result
 }
 
 // ------------------------------------ Test Action ------------------------------------

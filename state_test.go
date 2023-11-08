@@ -95,7 +95,7 @@ func TestMatchNumeric(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func TestStateHash(t *testing.T) {
+func TestHash(t *testing.T) {
 	state1 := StateOf("A", "B", "C")
 	state2 := StateOf("C", "B", "A")
 	state3 := StateOf("A", "B", "C", "D")
@@ -103,6 +103,13 @@ func TestStateHash(t *testing.T) {
 	assert.Equal(t, state1.Hash(), state2.Hash())
 	assert.NotEqual(t, state1.Hash(), state3.Hash())
 	assert.NotEqual(t, state2.Hash(), state3.Hash())
+}
+
+func TestNumericHash(t *testing.T) {
+	state1 := StateOf("food=0", "hunger=0", "tired=0")
+	state2 := StateOf("food=10", "hunger=0", "tired=10")
+
+	assert.NotEqual(t, state1.Hash(), state2.Hash())
 }
 
 func TestStateEquals(t *testing.T) {
