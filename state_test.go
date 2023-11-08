@@ -34,7 +34,7 @@ func BenchmarkState(b *testing.B) {
 		state1 := StateOf("A", "B", "C")
 		state2 := StateOf("A", "B")
 		for i := 0; i < b.N; i++ {
-			state1.Has(state2)
+			state1.Match(state2)
 		}
 	})
 
@@ -70,17 +70,29 @@ func BenchmarkState(b *testing.B) {
 	})
 }
 
-func TestHas(t *testing.T) {
+func TestMatchSimple(t *testing.T) {
 	state1 := StateOf("A", "B", "C")
 	state2 := StateOf("A", "B")
-	state3 := StateOf("A", "B", "C", "D")
 
-	assert.True(t, state1.Has(state2))
-	assert.False(t, state2.Has(state1))
-	assert.True(t, state3.Has(state1))
-	assert.False(t, state1.Has(state3))
-	assert.True(t, state3.Has(state2))
-	assert.False(t, state2.Has(state3))
+	ok, err := state1.Match(state2)
+	assert.NoError(t, err)
+	assert.True(t, ok)
+
+	ok, err = state2.Match(state1)
+	assert.NoError(t, err)
+	assert.False(t, ok)
+}
+
+func TestMatchNumeric(t *testing.T) {
+	state1 := StateOf("A=50", "B=100")
+	state2 := StateOf("A>10", "B=100")
+
+	ok, err := state1.Match(state2)
+	assert.NoError(t, err)
+	assert.True(t, ok)
+
+	_, err = state2.Match(state1)
+	assert.Error(t, err)
 }
 
 func TestStateHash(t *testing.T) {
@@ -125,7 +137,9 @@ func TestStateApply(t *testing.T) {
 	state1.Apply(state2)
 
 	expect := StateOf("A", "B", "C", "D", "E")
-	assert.True(t, state1.Has(expect))
+	ok, err := state1.Match(expect)
+	assert.NoError(t, err)
+	assert.True(t, ok)
 }
 
 func TestDistance(t *testing.T) {
@@ -177,13 +191,20 @@ func TestParse(t *testing.T) {
 	}
 
 	for input, expect := range tests {
-		k, v, err := parseExpr(input)
+		k, v, err := parseRule(input)
 		if expect == "(error)" {
 			assert.Error(t, err)
 			continue
 		}
 
 		assert.NoError(t, err)
-		assert.Equal(t, expect, fmt.Sprintf("%s%s%.2f", k.String(), v.Operator().String(), v.Percent()), input)
+		assert.Equal(t, expect, fmt.Sprintf("%s%s", k.String(), v.String()), input)
 	}
+}
+func TestStateString(t *testing.T) {
+	state := StateOf("A", "B", "C")
+	assert.Equal(t, "{A=100.00, B=100.00, C=100.00}", state.String())
+
+	state = StateOf()
+	assert.Equal(t, "{}", state.String())
 }

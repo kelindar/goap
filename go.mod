@@ -5,7 +5,7 @@ go 1.20
 require (
 	github.com/BigJk/ramen v0.2.0
 	github.com/hajimehoshi/ebiten/v2 v2.2.5
-	github.com/kelindar/intmap v1.2.0
+	github.com/kelindar/intmap v1.3.0
 	github.com/zeebo/xxh3 v1.0.2
 )
 

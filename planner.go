@@ -19,9 +19,6 @@ type Action interface {
 	// Predict returns the state that is predicted to be the outcome of this action.
 	Predict(State) State
 
-	// IsValid checks if the action is valid.
-	IsValid() bool
-
 	// Perform performs the action and returns the outcome.
 	Perform() bool
 
@@ -47,24 +44,34 @@ func Plan(start, goal State, actions []Action) ([]Action, error) {
 		current := heap.Pop(openSet).(*node)
 
 		// If we reached the goal, reconstruct the path.
-		if current.state.Has(goal) {
+		done, err := current.state.Match(goal)
+		switch {
+		case err != nil:
+			return nil, err
+		case done:
 			return reconstructPlan(current), nil
 		}
 
 		closedSet[current.state.Hash()] = struct{}{}
 
 		for _, action := range actions {
-			if !action.IsValid() { // TODO: remove from the list / filter out invalid actions at the beginning
-				continue
-			}
 
-			if !current.state.Has(action.Require()) {
-				continue
+			// Check if the current state satisfies the action's requirements
+			match, err := current.state.Match(action.Require())
+			switch {
+			case err != nil:
+				return nil, err
+			case !match:
+				continue // Skip this action
 			}
 
 			outcome := action.Predict(current.state)
 			newState := current.state.Clone()
-			newState.Apply(outcome)
+
+			// Apply the outcome to the new state
+			if err := newState.Apply(outcome); err != nil {
+				return nil, err
+			}
 
 			if _, found := closedSet[newState.Hash()]; found {
 				continue
