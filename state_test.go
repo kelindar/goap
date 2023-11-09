@@ -156,15 +156,15 @@ func TestDistance(t *testing.T) {
 	state4 := StateOf("A", "B", "C")
 	state5 := StateOf("A", "B", "C", "D", "E")
 
-	assert.Equal(t, float32(1), state1.Distance(state2))
-	assert.Equal(t, float32(1), state2.Distance(state1))
-	assert.Equal(t, float32(1), state1.Distance(state3))
+	assert.Equal(t, float32(100), state1.Distance(state2))
+	assert.Equal(t, float32(100), state2.Distance(state1))
+	assert.Equal(t, float32(100), state1.Distance(state3))
 	assert.Equal(t, float32(0), state3.Distance(state1))
 	assert.Equal(t, float32(0), state1.Distance(state4))
 	assert.Equal(t, float32(0), state4.Distance(state1))
-	assert.Equal(t, float32(2), state1.Distance(state5))
+	assert.Equal(t, float32(200), state1.Distance(state5))
 	assert.Equal(t, float32(0), state5.Distance(state1))
-	assert.Equal(t, float32(2), state2.Distance(state5))
+	assert.Equal(t, float32(200), state2.Distance(state5))
 	assert.Equal(t, float32(0), state5.Distance(state2))
 }
 

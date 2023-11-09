@@ -20,17 +20,8 @@ func TestNumericPlan(t *testing.T) {
 
 	plan, err := Plan(start, goal, actions)
 	assert.NoError(t, err)
-	assert.Equal(t, []string{
-		"Forage",
-		"Forage",
-		"Forage",
-		"Forage",
-		"Forage",
-		"Forage",
-		"Forage",
-		"Forage",
-		"Forage",
-	}, planOf(plan))
+	assert.Equal(t, []string{"Forage", "Forage", "Forage", "Sleep", "Forage", "Forage", "Sleep", "Forage", "Forage", "Forage", "Sleep", "Eat", "Forage"},
+		planOf(plan))
 }
 
 func TestSimplePlan(t *testing.T) {
@@ -45,10 +36,8 @@ func TestSimplePlan(t *testing.T) {
 
 	plan, err := Plan(start, goal, actions)
 	assert.NoError(t, err)
-	assert.Equal(t, []string{
-		"Move A to D",
-		"Move B to C",
-	}, planOf(plan))
+	assert.Equal(t, []string{"Move A to D", "Move B to C"},
+		planOf(plan))
 }
 
 func TestNoPlanFound(t *testing.T) {

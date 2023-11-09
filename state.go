@@ -300,17 +300,16 @@ func (s State) Apply(effects State) error {
 	})
 }
 
-// has returns true if the state contains the fact with a given state.
-func (s State) has(f fact, x uint32) bool {
-	v, ok := s.m.Load(uint32(f))
-	return ok && v >= x
-}
-
 // Distance estimates the distance to the goal state as the number of differing keys.
 func (s State) Distance(goal State) (diff float32) {
 	goal.m.RangeEach(func(k, v uint32) {
-		if !s.has(fact(k), v) {
-			diff++
+		y := expr(v).Percent()
+		x := s.load(fact(k)).Percent()
+		switch {
+		case x > y:
+			diff += x - y
+		case x < y:
+			diff += y - x
 		}
 	})
 	return diff
