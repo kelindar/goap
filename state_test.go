@@ -30,7 +30,7 @@ func BenchmarkState(b *testing.B) {
 		assert.NotNil(b, s2)
 	})
 
-	b.Run("has", func(b *testing.B) {
+	b.Run("match", func(b *testing.B) {
 		state1 := StateOf("A", "B", "C")
 		state2 := StateOf("A", "B")
 		for i := 0; i < b.N; i++ {

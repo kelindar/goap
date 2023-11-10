@@ -192,7 +192,8 @@ func (e expr) String() string {
 
 // State represents a state of the world.
 type State struct {
-	m *intmap.Map
+	h uint64      // Hash of the state
+	m *intmap.Map // Map of facts
 }
 
 // StateOf creates a new state from a list of keys.
@@ -201,28 +202,39 @@ func StateOf(rules ...string) State {
 	for _, fact := range rules {
 		state.Add(fact)
 	}
+	state.rehash()
 	return state
 }
 
+// rehash rehashes the state
+func (s *State) rehash() {
+	s.h = 0
+	s.m.RangeEach(func(k, v uint32) {
+		s.h ^= (uint64(k) << 32) | (uint64(v)*0xdeece66d + 0xb)
+	})
+}
+
 // Add adds a key to the state.
-func (s State) Add(rule string) error {
+func (s *State) Add(rule string) error {
 	k, v, err := parseRule(rule)
 	if err != nil {
 		return err
 	}
 
 	s.m.Store(uint32(k), uint32(v))
+	s.rehash()
 	return nil
 }
 
 // Remove removes a key from the state.
-func (s State) Remove(rule string) error {
+func (s *State) Remove(rule string) error {
 	k, _, err := parseRule(rule)
 	if err != nil {
 		return err
 	}
 
 	s.m.Delete(uint32(k))
+	s.rehash()
 	return nil
 }
 
@@ -235,7 +247,7 @@ func (s State) load(f fact) expr {
 }
 
 // Match checks if the State satisfies all the rules of the other state.
-func (s State) Match(other State) (bool, error) {
+func (s *State) Match(other State) (bool, error) {
 	match := true
 	err := other.m.RangeErr(func(k, v uint32) error {
 		f, e := fact(k), expr(v)
@@ -275,7 +287,8 @@ func (s State) Match(other State) (bool, error) {
 }
 
 // Apply adds (applies) the keys from the effects to the state.
-func (s State) Apply(effects State) error {
+func (s *State) Apply(effects State) error {
+	defer s.rehash()
 	return effects.m.RangeErr(func(k, v uint32) error {
 		f, e := fact(k), expr(v)
 		x := s.load(f)
@@ -301,7 +314,7 @@ func (s State) Apply(effects State) error {
 }
 
 // Distance estimates the distance to the goal state as the number of differing keys.
-func (s State) Distance(goal State) (diff float32) {
+func (s *State) Distance(goal State) (diff float32) {
 	goal.m.RangeEach(func(k, v uint32) {
 		y := expr(v).Percent()
 		x := s.load(fact(k)).Percent()
@@ -316,30 +329,25 @@ func (s State) Distance(goal State) (diff float32) {
 }
 
 // Equals returns true if the state is equal to the other state.
-func (s State) Equals(other State) bool {
-	if s.m.Count() != other.m.Count() {
-		return false
-	}
+func (s *State) Equals(other State) bool {
 	return s.Hash() == other.Hash()
 }
 
 // Hash returns a hash of the state.
-func (s State) Hash() (h uint64) {
-	s.m.RangeEach(func(k, v uint32) {
-		h ^= (uint64(k) << 32) | (uint64(v)*0xdeece66d + 0xb)
-	})
-	return
+func (s *State) Hash() (h uint64) {
+	return s.h
 }
 
 // Clone returns a clone of the state.
-func (s State) Clone() State {
+func (s *State) Clone() State {
 	return State{
+		h: s.h,
 		m: s.m.Clone(),
 	}
 }
 
 // String returns a string representation of the state.
-func (s State) String() string {
+func (s *State) String() string {
 	values := make([]string, 0, s.m.Count())
 	s.m.RangeEach(func(k, v uint32) {
 		values = append(values, fact(k).String()+expr(v).String())

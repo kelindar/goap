@@ -22,7 +22,7 @@ func BenchmarkPlan(b *testing.B) {
 		actions := []Action{
 			actionOf("Eat", 1.0, StateOf("food>0"), StateOf("hunger-50", "food-5")),
 			actionOf("Forage", 1.0, StateOf("tired<50"), StateOf("tired+20", "food+10", "hunger+5")),
-			actionOf("Sleep", 1.0, StateOf("tired>30"), StateOf("tired-30")),
+			actionOf("Sleep", 1.0, StateOf("tired>30"), StateOf("tired-50")),
 		}
 
 		b.ResetTimer()
