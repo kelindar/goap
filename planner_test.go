@@ -9,6 +9,30 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+/*
+cpu: 13th Gen Intel(R) Core(TM) i7-13700K
+BenchmarkPlan/deep-24         	     244	   4674232 ns/op	24156188 B/op	     117 allocs/op
+*/
+func BenchmarkPlan(b *testing.B) {
+	b.ReportAllocs()
+
+	b.Run("deep", func(b *testing.B) {
+		start := StateOf("hunger=80", "!food", "!tired")
+		goal := StateOf("food>80")
+		actions := []Action{
+			actionOf("Eat", 1.0, StateOf("food>0"), StateOf("hunger-50", "food-5")),
+			actionOf("Forage", 1.0, StateOf("tired<50"), StateOf("tired+20", "food+10", "hunger+5")),
+			actionOf("Sleep", 1.0, StateOf("tired>30"), StateOf("tired-30")),
+		}
+
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			_, err := Plan(start, goal, actions)
+			assert.NoError(b, err)
+		}
+	})
+}
+
 func TestNumericPlan(t *testing.T) {
 	start := StateOf("hunger=80", "!food", "!tired")
 	goal := StateOf("food>80")

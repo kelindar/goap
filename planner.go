@@ -81,8 +81,9 @@ func Plan(start, goal State, actions []Action) ([]Action, error) {
 
 			// Check if newState is already in openSet or if the newCost is lower
 			foundInOpenSet := false
+			newHash := newState.Hash()
 			for _, openNode := range *openSet {
-				if openNode.state.Equals(newState) {
+				if openNode.hash == newHash {
 					foundInOpenSet = true
 					if newCost < openNode.cost {
 						openNode.cost = newCost
@@ -98,6 +99,7 @@ func Plan(start, goal State, actions []Action) ([]Action, error) {
 				heuristic := newState.Distance(goal)
 				newNode := &node{
 					state:     newState,
+					hash:      newHash,
 					parent:    current,
 					action:    action,
 					cost:      newCost,
@@ -132,7 +134,8 @@ func reconstructPlan(goalNode *node) []Action {
 
 // node represents a node in the graph used by the A* algorithm.
 type node struct {
-	state     State
+	state     State   // State of the node
+	hash      uint64  // Hash of the state
 	action    Action  // The action that led to this node
 	parent    *node   // Pointer to the parent node
 	cost      float32 // Cost from the start node to this node
