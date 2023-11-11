@@ -10,7 +10,7 @@ import (
 	"sync"
 )
 
-const linearCutoff = 0 // 1 cache line
+const linearCutoff = 8 // 1 cache line
 
 var pool = sync.Pool{
 	New: func() any {
