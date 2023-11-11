@@ -63,22 +63,10 @@ func Plan(start, goal *State, actions []Action) ([]Action, error) {
 
 			//fmt.Printf("Action: %s, State: %s, New: %s\n", action.String(), current.String(), newState.String())
 
-			// If the new state was already visited, skip it
-			if _, ok := heap.visit[newState.Hash()]; ok {
-				newState.release()
-				continue
-			}
-
 			// Check if newState is already planned to be visited or if the newCost is lower
 			newCost := current.stateCost + action.Cost()
 			node, found := heap.Find(newState.Hash())
 			switch {
-			case found && newCost < node.stateCost:
-				node.parent = current
-				node.stateCost = newCost
-				node.totalCost = newCost + node.heuristic
-				heap.Fix(node) // Update the node's position in the heap
-				newState.release()
 			case !found:
 				heuristic := newState.Distance(goal)
 				newState.parent = current
@@ -87,7 +75,15 @@ func Plan(start, goal *State, actions []Action) ([]Action, error) {
 				newState.stateCost = newCost
 				newState.totalCost = newCost + heuristic
 				heap.Push(newState)
-			default: // The newCost is higher, skip it
+
+			// In any of those cases, we need to release the new state
+			case found && !node.visited && newCost < node.stateCost:
+				node.parent = current
+				node.stateCost = newCost
+				node.totalCost = newCost + node.heuristic
+				heap.Fix(node) // Update the node's position in the heap
+				fallthrough
+			default: // The new state is already visited or the newCost is higher
 				newState.release()
 			}
 		}
@@ -158,6 +154,7 @@ func (h *graph) Swap(i, j int) { h.heap[i], h.heap[j] = h.heap[j], h.heap[i] }
 // Push pushes the element x onto the heap.
 // The complexity is O(log n) where n = h.Len().
 func (h *graph) Push(v *State) {
+	v.index = h.Len()
 	h.heap = append(h.heap, v)
 	h.up(h.Len() - 1)
 	h.visit[v.Hash()] = v
