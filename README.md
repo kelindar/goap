@@ -10,17 +10,19 @@
 
 ## GOAP: Goal-Oriented Action Planning in Go
 
-**GOAP** is a Goal-Oriented Action Planning library written in Go. It is designed to help you find plans to achieve a specific goal by selecting appropriate actions from a set of available actions. GOAP is well-suited for solving complex decision-making problems, such as AI planning in games, robotics, and other applications.
+**GOAP**, standing for Goal-Oriented Action Planning, is a library developed in Go, designed to facilitate the creation of plans to achieve specific goals. Its primary application is in AI planning for areas such as game development, robotics, and other fields requiring complex decision-making. GOAP combines the simplicity of Go with the complexity of action planning, making it a practical tool for developers in need of reliable AI solutions.
 
-### Features
+### Key Features
 
-1. **High Performance**: This library is designed for efficiency and performance, making it suitable for real-time applications.
+1. **High Performance**: This library is built with performance in mind, ensuring it can handle real-time decision-making efficiently and with minimal overhead.
 
-2. **Flexible Actions**: Define custom actions that can be used in the planning process.
+2. **Simple Interface**: This library is designed to be easy to use, with a simple interface that allows you to define actions and goals with minimal code.
 
-3. **Numeric and Symbolic States**: The library supports both numeric and symbolic states, making it versatile for various types of problems
+3. **Supports Various State Types**: With support for both numeric and symbolic states, this library can be applied to a wide range of problems and use cases. This allows you to define states such as `food=10` or `!food` (no food).
 
-4. **Heuristic Search**: The library uses heuristic search (A\*) to efficiently explore possible plans.
+4. **A\* Search**: Utilizing the A\* algorithm, the library efficiently navigates through possible plans, aiding in finding optimal paths to achieve goals. It uses the state distance heuristic to determine the best plan.
+
+GOAP's blend of efficiency, flexibility, and practical search capabilities makes it a valuable tool for developers looking to incorporate advanced planning and decision-making into their AI applications.
 
 ## Quick Start
 
