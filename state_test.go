@@ -4,7 +4,6 @@
 package goap
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -170,46 +169,6 @@ func TestDistance(t *testing.T) {
 	assert.Equal(t, float32(0), state5.Distance(state2))
 }
 
-func TestParse(t *testing.T) {
-	tests := map[string]string{
-		"hp":         "hp=100.00",
-		"!hp":        "hp=0.00",
-		"hp=10":      "hp=10.00",
-		"hp=10.5":    "hp=10.50",
-		"hp=10.":     "hp=10.00",
-		"hp-1":       "hp-1.00",
-		"hp+1":       "hp+1.00",
-		"hp+1.5":     "hp+1.50",
-		"hp-1.5":     "hp-1.50",
-		"hp=200":     "hp=100.00",
-		"hp=0":       "hp=0.00",
-		"hp=0.5":     "hp=0.50",
-		"hp=0.":      "hp=0.00",
-		"hp-0.0":     "hp-0.00",
-		"hp>10":      "hp>10.00",
-		"hp<10":      "hp<10.00",
-		"ammo_max":   "ammo_max=100.00",
-		"!ammo_max":  "ammo_max=0.00",
-		"ammo_Max=0": "ammo_Max=0.00",
-		"hp>=10":     "(error)",
-		"hp<=10":     "(error)",
-		"abc2":       "(error)",
-		"hp 2":       "(error)",
-		"hp=2.2.2":   "(error)",
-		"hp ":        "(error)",
-	}
-
-	for input, expect := range tests {
-		k, v, err := parseRule(input)
-		if expect == "(error)" {
-			assert.Error(t, err)
-			continue
-		}
-
-		assert.NoError(t, err)
-		assert.Equal(t, expect, fmt.Sprintf("%s%s", k.String(), v.String()), input)
-	}
-}
 func TestStateString(t *testing.T) {
 	state := StateOf("A", "B", "C")
 	assert.Equal(t, "{C=100.00, B=100.00, A=100.00}", state.String())

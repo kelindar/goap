@@ -182,7 +182,7 @@ func (e expr) String() string {
 
 type rule uint64
 
-func elemOf(f fact, e expr) rule {
+func ruleOf(f fact, e expr) rule {
 	return rule(f)<<32 | rule(e)
 }
 
@@ -194,6 +194,6 @@ func (e rule) Expr() expr {
 	return expr(e & 0xFFFFFFFF)
 }
 
-func (e rule) Hash() uint32{
+func (e rule) Hash() uint32 {
 	return uint32(e.Fact()) | (uint32(e.Expr())*0xdeece66d + 0xb)
 }

@@ -107,12 +107,12 @@ func (s *State) find(key fact) (int, bool) {
 // indicates whether the key was added to the state (true) or updated (false).
 func (s *State) store(k fact, v expr) bool {
 	if i, ok := s.find(k); ok {
-		s.vx[i] = elemOf(k, v)
+		s.vx[i] = ruleOf(k, v)
 		return false
 	}
 
 	// If not, add it to the state
-	s.vx = append(s.vx, elemOf(k, v))
+	s.vx = append(s.vx, ruleOf(k, v))
 	return true
 }
 
