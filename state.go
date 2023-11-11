@@ -193,9 +193,6 @@ func (s *State) Match(other *State) (bool, error) {
 
 // Apply adds (applies) the keys from the effects to the state.
 func (s *State) Apply(effects *State) error {
-	defer s.rehash()
-	defer s.sort()
-
 	for _, elem := range effects.vx {
 		f, e := elem.Fact(), elem.Expr()
 		x := s.load(f)
@@ -217,6 +214,13 @@ func (s *State) Apply(effects *State) error {
 			return fmt.Errorf("plan: cannot apply '%s%s', invalid predict operator '%s'", f.String(), e.String(), e.Operator().String())
 		}
 	}
+
+	// Only sort if we have more than 8 elements, otherwise it's faster to
+	// just do a linear search.
+	if len(s.vx) > linearCutoff {
+		s.sort()
+	}
+	s.rehash()
 	return nil
 }
 

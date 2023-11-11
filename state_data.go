@@ -193,3 +193,7 @@ func (e rule) Fact() fact {
 func (e rule) Expr() expr {
 	return expr(e & 0xFFFFFFFF)
 }
+
+func (e rule) Hash() uint32{
+	return uint32(e.Fact()) | (uint32(e.Expr())*0xdeece66d + 0xb)
+}
