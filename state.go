@@ -34,7 +34,7 @@ func newState(capacity int) *State {
 // State represents a state of the world.
 type State struct {
 	hx uint32 // Hash of the state
-	vx []rule // Keys and values, interleaved
+	vx rules  // Keys and values, interleaved
 	node
 }
 
@@ -72,7 +72,7 @@ func (s *State) release() {
 }
 
 func (s *State) sort() {
-	sort.Slice(s.vx, func(i, j int) bool { return s.vx[i].Fact() > s.vx[j].Fact() })
+	sort.Sort(&s.vx)
 }
 
 func (s *State) findLinear(key fact) (int, bool) {
