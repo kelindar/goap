@@ -53,7 +53,6 @@ func StateOf(rules ...string) *State {
 	for _, fact := range rules {
 		state.Add(fact)
 	}
-	state.rehash()
 	return state
 }
 
@@ -66,15 +65,6 @@ func (s *State) release() {
 	s.vx = s.vx[:0]
 	s.node = node{}
 	pool.Put(s)
-}
-
-// rehash rehashes the state
-func (s *State) rehash() {
-	s.hx = 0
-	for _, v := range s.vx {
-		//s.h ^= (uint64(k) << 32) | (uint64(v)*0xdeece66d + 0xb)
-		s.hx ^= (uint32(v.Fact()) | (uint32(v.Expr())*0xdeece66d + 0xb))
-	}
 }
 
 func (s *State) sort() {
@@ -106,12 +96,18 @@ func (s *State) find(key fact) (int, bool) {
 // and sorting the keys. This is NOT DONE by this method. The return value
 // indicates whether the key was added to the state (true) or updated (false).
 func (s *State) store(k fact, v expr) bool {
+	r := ruleOf(k, v)
+
+	// Check if the key already exists
 	if i, ok := s.find(k); ok {
-		s.vx[i] = ruleOf(k, v)
+		s.hx ^= s.vx[i].Hash()
+		s.hx ^= r.Hash()
+		s.vx[i] = r
 		return false
 	}
 
 	// If not, add it to the state
+	s.hx ^= r.Hash()
 	s.vx = append(s.vx, ruleOf(k, v))
 	return true
 }
@@ -126,8 +122,6 @@ func (s *State) Add(rule string) error {
 	if added := s.store(k, v); added {
 		s.sort()
 	}
-
-	s.rehash()
 	return nil
 }
 
@@ -145,10 +139,10 @@ func (s *State) Del(rule string) error {
 
 	// If we deleted, we need to sort and rehash. The sorting will place
 	// the zero value at the end of the slice, so we can just trim it.
+	s.hx ^= s.vx[i].Hash()
 	s.vx[i] = 0
 	s.sort()
 	s.vx = s.vx[:len(s.vx)-1]
-	s.rehash()
 	return nil
 }
 
@@ -220,7 +214,6 @@ func (s *State) Apply(effects *State) error {
 	if len(s.vx) > linearCutoff {
 		s.sort()
 	}
-	s.rehash()
 	return nil
 }
 
