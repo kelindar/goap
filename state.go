@@ -191,6 +191,7 @@ func (s *State) Match(other *State) (bool, error) {
 
 // Apply adds (applies) the keys from the effects to the state.
 func (s *State) Apply(effects *State) error {
+	unsorted := false
 	for _, elem := range effects.vx {
 		f, e := elem.Fact(), elem.Expr()
 		x := s.load(f)
@@ -203,11 +204,11 @@ func (s *State) Apply(effects *State) error {
 		// Apply the effect to the state
 		switch e.Operator() {
 		case opEqual:
-			s.store(f, e)
+			unsorted = s.store(f, e) || unsorted
 		case opIncrement:
-			s.store(f, exprOf(x.Operator(), x.Percent()+e.Percent()))
+			unsorted = s.store(f, exprOf(x.Operator(), x.Percent()+e.Percent())) || unsorted
 		case opDecrement:
-			s.store(f, exprOf(x.Operator(), x.Percent()-e.Percent()))
+			unsorted = s.store(f, exprOf(x.Operator(), x.Percent()-e.Percent())) || unsorted
 		default:
 			return fmt.Errorf("plan: cannot apply '%s%s', invalid predict operator '%s'", f.String(), e.String(), e.Operator().String())
 		}
@@ -215,7 +216,7 @@ func (s *State) Apply(effects *State) error {
 
 	// Only sort if we have more than 8 elements, otherwise it's faster to
 	// just do a linear search.
-	if len(s.vx) > linearCutoff {
+	if unsorted && len(s.vx) > linearCutoff {
 		s.sort()
 	}
 	return nil

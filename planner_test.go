@@ -29,6 +29,7 @@ BenchmarkPlan/deep-24         	  380756	      3103 ns/op	     230 B/op	       1 
 BenchmarkPlan/maze-24         	      37	  31458708 ns/op	 2702894 B/op	   80711 allocs/op
 BenchmarkPlan/maze-24         	      63	  18643352 ns/op	 1569536 B/op	   51464 allocs/op
 BenchmarkPlan/maze-24         	      64	  18393683 ns/op	 1628704 B/op	   51464 allocs/op
+BenchmarkPlan/maze-24         	      69	  16841377 ns/op	  794077 B/op	   23827 allocs/op
 */
 func BenchmarkPlan(b *testing.B) {
 	b.ReportAllocs()
