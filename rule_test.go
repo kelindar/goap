@@ -38,6 +38,8 @@ func TestParse(t *testing.T) {
 		"hp 2":       "(error)",
 		"hp=2.2.2":   "(error)",
 		"hp ":        "(error)",
+		"":           "(error)",
+		"!":          "(error)",
 	}
 
 	for input, expect := range tests {
@@ -75,6 +77,11 @@ func TestRuleHash(t *testing.T) {
 		assert.Equal(t, state, hashOf(test.expect...),
 			strings.Join(test.rules, ", "))
 	}
+}
+
+func TestFactString(t *testing.T) {
+	assert.Equal(t, "A", factOf("A").String())
+	assert.Equal(t, "unknown", fact(123).String())
 }
 
 // ------------------------------------ Test Functions ------------------------------------

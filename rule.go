@@ -197,11 +197,3 @@ func (e rule) Expr() expr {
 func (e rule) Hash() uint32 {
 	return uint32(e.Fact()) | (uint32(e.Expr())*0xdeece66d + 0xb)
 }
-
-// ------------------------------------ Slice ------------------------------------
-
-type rules []rule
-
-func (x *rules) Len() int           { return len((*x)) }
-func (x *rules) Less(i, j int) bool { return (*x)[i].Fact() > (*x)[j].Fact() }
-func (x *rules) Swap(i, j int)      { (*x)[i], (*x)[j] = (*x)[j], (*x)[i] }
