@@ -14,10 +14,10 @@ type Action interface {
 	fmt.Stringer
 
 	// Require returns the state that is required for this action to be performed.
-	Require() State
+	Require() *State
 
 	// Predict returns the state that is predicted to be the outcome of this action.
-	Predict(State) State
+	Predict(*State) *State
 
 	// Perform performs the action and returns the outcome.
 	Perform() bool
@@ -27,7 +27,7 @@ type Action interface {
 }
 
 // Plan finds a plan to reach the goal from the start state using the provided actions.
-func Plan(start, goal State, actions []Action) ([]Action, error) {
+func Plan(start, goal *State, actions []Action) ([]Action, error) {
 	openSet := &nodeHeap{}
 	heap.Init(openSet)
 	startNode := &node{
@@ -133,7 +133,7 @@ func reconstructPlan(goalNode *node) []Action {
 
 // node represents a node in the graph used by the A* algorithm.
 type node struct {
-	state     State   // State of the node
+	state     *State  // State of the node
 	action    Action  // The action that led to this node
 	parent    *node   // Pointer to the parent node
 	cost      float32 // Cost from the start node to this node

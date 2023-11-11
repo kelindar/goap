@@ -74,13 +74,13 @@ func TestMatchSimple(t *testing.T) {
 	state1 := StateOf("A", "B", "C")
 	state2 := StateOf("A", "B")
 
-	ok, err := state1.Match(state2)
+	ok1, err := state1.Match(state2)
 	assert.NoError(t, err)
-	assert.True(t, ok)
+	assert.True(t, ok1)
 
-	ok, err = state2.Match(state1)
+	ok2, err := state2.Match(state1)
 	assert.NoError(t, err)
-	assert.False(t, ok)
+	assert.False(t, ok2)
 }
 
 func TestMatchNumeric(t *testing.T) {

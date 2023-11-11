@@ -18,6 +18,7 @@ BenchmarkPlan/deep-24         	    7272	    154309 ns/op	 1347781 B/op	      98 
 BenchmarkPlan/deep-24         	   26125	     45611 ns/op	  268996 B/op	     100 allocs/op
 BenchmarkPlan/deep-24         	   34647	     34471 ns/op	    3898 B/op	      98 allocs/op
 BenchmarkPlan/deep-24         	  199707	      5966 ns/op	    3763 B/op	      98 allocs/op
+BenchmarkPlan/deep-24         	  255236	      4625 ns/op	    3285 B/op	      68 allocs/op
 */
 func BenchmarkPlan(b *testing.B) {
 	b.ReportAllocs()
@@ -93,7 +94,7 @@ func planOf(plan []Action) []string {
 
 // ------------------------------------ Test Action ------------------------------------
 
-func actionOf(name string, cost float32, require, outcome State) Action {
+func actionOf(name string, cost float32, require, outcome *State) Action {
 	return &testAction{
 		name:    name,
 		cost:    cost,
@@ -105,15 +106,15 @@ func actionOf(name string, cost float32, require, outcome State) Action {
 type testAction struct {
 	name    string
 	cost    float32
-	require State
-	outcome State
+	require *State
+	outcome *State
 }
 
-func (a *testAction) Require() State {
+func (a *testAction) Require() *State {
 	return a.require
 }
 
-func (a *testAction) Predict(_ State) State {
+func (a *testAction) Predict(_ *State) *State {
 	return a.outcome
 }
 
