@@ -32,9 +32,9 @@ func TestParse(t *testing.T) {
 		"ammo_max":   "ammo_max=100.00",
 		"!ammo_max":  "ammo_max=0.00",
 		"ammo_Max=0": "ammo_Max=0.00",
+		"abc2":       "abc2=100.00",
 		"hp>=10":     "(error)",
 		"hp<=10":     "(error)",
-		"abc2":       "(error)",
 		"hp 2":       "(error)",
 		"hp=2.2.2":   "(error)",
 		"hp ":        "(error)",
@@ -63,6 +63,7 @@ func TestRuleHash(t *testing.T) {
 		{[]string{"A", "B", "C"}, []string{}},
 		{[]string{"A", "B", "C", "D"}, []string{"D"}},
 		{[]string{"A", "A=50"}, []string{"A=50", "B", "C"}},
+		{[]string{"X1", "D"}, []string{"A", "B", "C", "X1", "D"}},
 	}
 
 	for _, test := range tests {

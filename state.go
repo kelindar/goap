@@ -51,7 +51,9 @@ type node struct {
 func StateOf(rules ...string) *State {
 	state := newState(len(rules))
 	for _, fact := range rules {
-		state.Add(fact)
+		if err := state.Add(fact); err != nil {
+			panic(err)
+		}
 	}
 	return state
 }

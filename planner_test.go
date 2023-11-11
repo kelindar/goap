@@ -4,6 +4,7 @@
 package goap
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -58,33 +59,51 @@ func TestNumericPlan(t *testing.T) {
 		planOf(plan))
 }
 
-func TestSimplePlan(t *testing.T) {
-	start := StateOf("A", "B")
-	goal := StateOf("C", "D")
+func TestLabyrinth(t *testing.T) {
+	start := StateOf("A")
+	goal := StateOf("Z")
 	actions := []Action{
-		actionOf("Move A to C", 1.0, StateOf("A"), StateOf("!A", "C")),
-		actionOf("Move A to D", 0.5, StateOf("A"), StateOf("!A", "D")),
-		actionOf("Move B to C", 1.0, StateOf("B"), StateOf("!B", "C")),
-		actionOf("Move B to D", 1.0, StateOf("B"), StateOf("!B", "D")),
+		move("A->B"), move("B->C"), move("C->D"), move("D->E"), move("E->F"), move("F->G"),
+		move("G->H"), move("H->I"), move("I->J"), move("C->X1"), move("E->X2"), move("G->X3"),
+		move("X1->D"), move("X2->F"), move("X3->H"), move("B->Y1"), move("D->Y2"), move("F->Y3"),
+		move("Y1->C"), move("Y2->E"), move("Y3->G"), move("J->K"), move("K->L"), move("L->M"),
+		move("M->N"), move("N->O"), move("O->P"), move("P->Q"), move("Q->R"), move("R->S"),
+		move("S->T"), move("T->U"), move("U->V"), move("V->W"), move("W->X"), move("X->Y"),
+		move("Y->Z"), move("U->Z1"), move("W->Z2"), move("Z1->V"), move("Z2->X"), move("A->Z3"),
 	}
 
 	plan, err := Plan(start, goal, actions)
 	assert.NoError(t, err)
-	assert.Equal(t, []string{"Move A to D", "Move B to C"},
+	assert.Equal(t, []string{"A->B", "B->C", "C->D", "D->E", "E->F", "F->G", "G->H", "H->I", "I->J",
+		"J->K", "K->L", "L->M", "M->N", "N->O", "O->P", "P->Q", "Q->R", "R->S", "S->T", "T->U", "U->V",
+		"V->W", "W->X", "X->Y", "Y->Z"},
+		planOf(plan))
+}
+
+func TestSimplePlan(t *testing.T) {
+	start := StateOf("A", "B")
+	goal := StateOf("C", "D")
+	actions := []Action{move("A->C"), move("A->D"), move("B->C"), move("B->D")}
+
+	plan, err := Plan(start, goal, actions)
+	assert.NoError(t, err)
+	assert.Equal(t, []string{"A->C", "B->D"},
 		planOf(plan))
 }
 
 func TestNoPlanFound(t *testing.T) {
-	start := StateOf("A", "B")
-	goal := StateOf("C", "D")
-	actions := []Action{
-		actionOf("Move A to C", 1.0, StateOf("A"), StateOf("!A", "C")),
-		actionOf("Move B to C", 1.0, StateOf("B"), StateOf("!B", "C")),
-	}
-
-	plan, err := Plan(start, goal, actions)
+	plan, err := Plan(StateOf("A", "B"), StateOf("C", "D"), []Action{
+		move("A->C"), move("B->C"),
+	})
 	assert.Error(t, err)
 	assert.Nil(t, plan)
+}
+
+// ------------------------------------ Test Action ------------------------------------
+
+func move(m string) Action {
+	arr := strings.Split(m, "->")
+	return actionOf(m, 1, StateOf(arr[0]), StateOf("!"+arr[0], arr[1]))
 }
 
 func planOf(plan []Action) []string {
@@ -94,8 +113,6 @@ func planOf(plan []Action) []string {
 	}
 	return result
 }
-
-// ------------------------------------ Test Action ------------------------------------
 
 func actionOf(name string, cost float32, require, outcome *State) Action {
 	return &testAction{

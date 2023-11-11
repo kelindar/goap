@@ -52,6 +52,8 @@ func Plan(start, goal *State, actions []Action) ([]Action, error) {
 		for _, action := range actions {
 			require, outcome := action.Simulate(current)
 
+			// fmt.Printf("Explore %s\n", action.String())
+
 			// Check if the current state satisfies the action's requirements
 			match, err := current.Match(require)
 			switch {
@@ -68,6 +70,8 @@ func Plan(start, goal *State, actions []Action) ([]Action, error) {
 			if err := newState.Apply(outcome); err != nil {
 				return nil, err
 			}
+
+			//fmt.Printf("Action: %s, State: %s, New: %s\n", action.String(), current.String(), newState.String())
 
 			// If the new state was already visited, skip it
 			if _, ok := visited[newState.Hash()]; ok {
