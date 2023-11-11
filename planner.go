@@ -15,7 +15,7 @@ type Action interface {
 
 	// Simulate returns requirements and outcomes given the current
 	// state (model) of the world.
-	Simulate(*State) (require, outcome *State)
+	Simulate(current *State) (require, outcome *State)
 
 	// Cost returns the cost of performing the action.
 	Cost() float32
@@ -23,23 +23,23 @@ type Action interface {
 
 // Plan finds a plan to reach the goal from the start state using the provided actions.
 func Plan(start, goal *State, actions []Action) ([]Action, error) {
-	openSet := &nodeHeap{}
-	heap.Init(openSet)
-	startNode := &node{
-		state:     start,
-		cost:      0,
-		heuristic: start.Distance(goal),
-	}
+	visited := make(map[uint32]struct{}, 32)
+	pending := &stateHeap{}
+	heap.Init(pending)
+	heap.Push(pending, &State{
+		hx: start.hx,
+		vx: start.vx,
+		node: node{
+			stateCost: 0,
+			heuristic: start.Distance(goal),
+		},
+	})
 
-	heap.Push(openSet, startNode)
-
-	closedSet := make(map[uint32]struct{})
-
-	for openSet.Len() > 0 {
-		current := heap.Pop(openSet).(*node)
+	for pending.Len() > 0 {
+		current := heap.Pop(pending).(*State)
 
 		// If we reached the goal, reconstruct the path.
-		done, err := current.state.Match(goal)
+		done, err := current.Match(goal)
 		switch {
 		case err != nil:
 			return nil, err
@@ -47,13 +47,13 @@ func Plan(start, goal *State, actions []Action) ([]Action, error) {
 			return reconstructPlan(current), nil
 		}
 
-		closedSet[current.state.Hash()] = struct{}{}
+		visited[current.Hash()] = struct{}{}
 
 		for _, action := range actions {
-			require, outcome := action.Simulate(current.state)
+			require, outcome := action.Simulate(current)
 
 			// Check if the current state satisfies the action's requirements
-			match, err := current.state.Match(require)
+			match, err := current.Match(require)
 			switch {
 			case err != nil:
 				return nil, err
@@ -61,7 +61,7 @@ func Plan(start, goal *State, actions []Action) ([]Action, error) {
 				continue // Skip this action
 			}
 
-			newState := current.state.Clone()
+			newState := current.Clone()
 			defer newState.release()
 
 			// Apply the outcome to the new state
@@ -69,38 +69,36 @@ func Plan(start, goal *State, actions []Action) ([]Action, error) {
 				return nil, err
 			}
 
-			if _, found := closedSet[newState.Hash()]; found {
+			// If the new state was already visited, skip it
+			if _, ok := visited[newState.Hash()]; ok {
 				continue
 			}
 
-			newCost := current.cost + action.Cost()
+			newCost := current.stateCost + action.Cost()
 
-			// Check if newState is already in openSet or if the newCost is lower
-			foundInOpenSet := false
-			for _, openNode := range *openSet {
-				if openNode.state.Equals(newState) {
-					foundInOpenSet = true
-					if newCost < openNode.cost {
-						openNode.cost = newCost
-						openNode.parent = current
-						openNode.totalCost = newCost + openNode.heuristic
-						heap.Fix(openSet, openNode.index) // Update the node's position in the heap
+			// Check if newState is already planned to be visited or if the newCost is lower
+			foundInPending := false
+			for _, node := range *pending {
+				if node.Equals(newState) {
+					foundInPending = true
+					if newCost < node.stateCost {
+						node.parent = current
+						node.stateCost = newCost
+						node.totalCost = newCost + node.heuristic
+						pending.Update(node) // Update the node's position in the heap
 					}
 					break
 				}
 			}
 
-			if !foundInOpenSet {
+			if !foundInPending {
 				heuristic := newState.Distance(goal)
-				newNode := &node{
-					state:     newState,
-					parent:    current,
-					action:    action,
-					cost:      newCost,
-					heuristic: heuristic,
-					totalCost: newCost + heuristic,
-				}
-				heap.Push(openSet, newNode)
+				newState.parent = current
+				newState.action = action
+				newState.heuristic = heuristic
+				newState.stateCost = newCost
+				newState.totalCost = newCost + heuristic
+				heap.Push(pending, newState)
 			}
 		}
 	}
@@ -109,8 +107,8 @@ func Plan(start, goal *State, actions []Action) ([]Action, error) {
 }
 
 // reconstructPlan reconstructs the plan from the goal node to the start node.
-func reconstructPlan(goalNode *node) []Action {
-	plan := make([]Action, 0, 8)
+func reconstructPlan(goalNode *State) []Action {
+	plan := make([]Action, 0, int(goalNode.index))
 	for n := goalNode; n != nil; n = n.parent {
 		if n.action != nil { // The start node has no action
 			plan = append(plan, n.action)
@@ -126,35 +124,28 @@ func reconstructPlan(goalNode *node) []Action {
 
 // ------------------------------------ Heap ------------------------------------
 
-// node represents a node in the graph used by the A* algorithm.
-type node struct {
-	state     *State  // State of the node
-	action    Action  // The action that led to this node
-	parent    *node   // Pointer to the parent node
-	cost      float32 // Cost from the start node to this node
-	heuristic float32 // Heuristic cost from this node to the goal
-	totalCost float32 // Sum of cost and heuristic
-	index     int     // Index of the node in the heap
-}
+// stateHeap is a min-heap of states.
+type stateHeap []*State
 
-// nodeHeap is a min-heap of nodes.
-type nodeHeap []*node
+func (h stateHeap) Len() int           { return len(h) }
+func (h stateHeap) Less(i, j int) bool { return h[i].totalCost < h[j].totalCost }
+func (h stateHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i]; h[i].index = i; h[j].index = j }
 
-func (h nodeHeap) Len() int           { return len(h) }
-func (h nodeHeap) Less(i, j int) bool { return h[i].totalCost < h[j].totalCost }
-func (h nodeHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i]; h[i].index = i; h[j].index = j }
-
-func (h *nodeHeap) Push(x interface{}) {
-	n := x.(*node)
+func (h *stateHeap) Push(x any) {
+	n := x.(*State)
 	n.index = len(*h)
 	*h = append(*h, n)
 }
 
-func (h *nodeHeap) Pop() interface{} {
+func (h *stateHeap) Pop() any {
 	old := *h
 	n := len(old)
 	node := old[n-1]
-	node.index = -1 // for safety
 	*h = old[0 : n-1]
 	return node
+}
+
+// Update modifies the priority and value of an element in the queue.
+func (h *stateHeap) Update(n *State) {
+	heap.Fix(h, n.index)
 }

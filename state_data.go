@@ -2,7 +2,6 @@ package goap
 
 import (
 	"fmt"
-	"math"
 	"strconv"
 	"strings"
 	"sync"
@@ -193,33 +192,4 @@ func (e rule) Fact() fact {
 
 func (e rule) Expr() expr {
 	return expr(e & 0xFFFFFFFF)
-}
-
-// ------------------------------------ Functions ------------------------------------
-
-func capacityFor(x uint32) uint32 {
-	if x == math.MaxUint32 {
-		return x
-	}
-
-	if x == 0 {
-		return 1
-	}
-
-	x--
-	x |= x >> 1
-	x |= x >> 2
-	x |= x >> 4
-	x |= x >> 8
-	x |= x >> 16
-	return x + 1
-}
-
-func arraySize(size int, fill float64) int {
-	s := capacityFor(uint32(math.Ceil(float64(size) / fill)))
-	if s < 2 {
-		s = 2
-	}
-
-	return int(s)
 }

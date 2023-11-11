@@ -19,6 +19,8 @@ BenchmarkPlan/deep-24         	   26125	     45611 ns/op	  268996 B/op	     100 
 BenchmarkPlan/deep-24         	   34647	     34471 ns/op	    3898 B/op	      98 allocs/op
 BenchmarkPlan/deep-24         	  199707	      5966 ns/op	    3763 B/op	      98 allocs/op
 BenchmarkPlan/deep-24         	  255236	      4625 ns/op	    3285 B/op	      68 allocs/op
+BenchmarkPlan/deep-24         	  251654	      4455 ns/op	    3205 B/op	      66 allocs/op
+BenchmarkPlan/deep-24         	  284216	      4133 ns/op	    1426 B/op	      38 allocs/op
 */
 func BenchmarkPlan(b *testing.B) {
 	b.ReportAllocs()

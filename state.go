@@ -35,6 +35,16 @@ func newState(capacity int) *State {
 type State struct {
 	hx uint32 // Hash of the state
 	vx []rule // Keys and values, interleaved
+	node
+}
+
+type node struct {
+	action    Action  // The action that led to this state
+	parent    *State  // Pointer to the parent state
+	heuristic float32 // Heuristic cost from this state to the goal
+	stateCost float32 // Cost from the start state to this state
+	totalCost float32 // Sum of cost and heuristic
+	index     int     // Index of the state in the heap
 }
 
 // StateOf creates a new state from a list of keys.
