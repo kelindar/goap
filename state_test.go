@@ -11,12 +11,12 @@ import (
 
 /*
 cpu: 13th Gen Intel(R) Core(TM) i7-13700K
-BenchmarkState/clone-24         	13685818	        87.07 ns/op	     224 B/op	       2 allocs/op
-BenchmarkState/match-24         	314971872	        3.827 ns/op	       0 B/op	       0 allocs/op
-BenchmarkState/add-24           	13094532	        87.17 ns/op	      40 B/op	       4 allocs/op
-BenchmarkState/remove-24        	14003313	        85.90 ns/op	      40 B/op	       4 allocs/op
-BenchmarkState/apply-24         	82659428	        15.14 ns/op	       0 B/op	       0 allocs/op
-BenchmarkState/distance-24      	180420306	        6.620 ns/op	       0 B/op	       0 allocs/op
+BenchmarkState/clone-24         	133348119	        9.036 ns/op	       0 B/op	       0 allocs/op
+BenchmarkState/match-24         	283748180	        4.256 ns/op	       0 B/op	       0 allocs/op
+BenchmarkState/add-24           	13884549	        86.82 ns/op	      40 B/op	       4 allocs/op
+BenchmarkState/remove-24        	14216644	        85.28 ns/op	      40 B/op	       4 allocs/op
+BenchmarkState/apply-24         	77019350	        14.92 ns/op	       0 B/op	       0 allocs/op
+BenchmarkState/distance-24      	186231789	        6.633 ns/op	       0 B/op	       0 allocs/op
 */
 func BenchmarkState(b *testing.B) {
 	b.ReportAllocs()
@@ -24,7 +24,7 @@ func BenchmarkState(b *testing.B) {
 	b.Run("clone", func(b *testing.B) {
 		s1, s2 := StateOf("A", "B", "C", "D"), StateOf()
 		for i := 0; i < b.N; i++ {
-			s2 = s1.Clone()
+			s1.Clone().release()
 		}
 		assert.NotNil(b, s2)
 	})
