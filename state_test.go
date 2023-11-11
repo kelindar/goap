@@ -11,12 +11,12 @@ import (
 
 /*
 cpu: 13th Gen Intel(R) Core(TM) i7-13700K
-BenchmarkState/clone-24         	13919708	        85.71 ns/op	     208 B/op	       2 allocs/op
-BenchmarkState/match-24         	125247872	        9.597 ns/op	       0 B/op	       0 allocs/op
-BenchmarkState/add-24           	14518809	        82.26 ns/op	      40 B/op	       4 allocs/op
-BenchmarkState/remove-24        	14153847	        84.15 ns/op	      40 B/op	       4 allocs/op
-BenchmarkState/apply-24         	65917405	        18.15 ns/op	       0 B/op	       0 allocs/op
-BenchmarkState/distance-24      	72343632	        17.25 ns/op	       0 B/op	       0 allocs/op
+BenchmarkState/clone-24         	13685818	        87.07 ns/op	     224 B/op	       2 allocs/op
+BenchmarkState/match-24         	314971872	        3.827 ns/op	       0 B/op	       0 allocs/op
+BenchmarkState/add-24           	13094532	        87.17 ns/op	      40 B/op	       4 allocs/op
+BenchmarkState/remove-24        	14003313	        85.90 ns/op	      40 B/op	       4 allocs/op
+BenchmarkState/apply-24         	82659428	        15.14 ns/op	       0 B/op	       0 allocs/op
+BenchmarkState/distance-24      	180420306	        6.620 ns/op	       0 B/op	       0 allocs/op
 */
 func BenchmarkState(b *testing.B) {
 	b.ReportAllocs()
@@ -144,22 +144,28 @@ func TestClone(t *testing.T) {
 }
 
 func TestDistance(t *testing.T) {
-	state1 := StateOf("A", "B", "C")
-	state2 := StateOf("A", "B", "D")
-	state3 := StateOf("A", "B", "C", "D")
-	state4 := StateOf("A", "B", "C")
-	state5 := StateOf("A", "B", "C", "D", "E")
+	tests := []struct {
+		state1, state2 []string
+		expect         float32
+	}{
+		{[]string{"A"}, []string{"A"}, 0},
+		{[]string{"A=100"}, []string{"A=10"}, 90},
+		{[]string{"A=100"}, []string{"A=90"}, 10},
+		{[]string{"A"}, []string{"B"}, 200},
+		{[]string{"A"}, []string{"A", "B"}, 100},
+		{[]string{"A", "B"}, []string{"A"}, 100},
+		{[]string{"A", "B"}, []string{"C", "D"}, 400},
+		{[]string{"A", "B"}, []string{"A", "B"}, 0},
+		{[]string{"A", "B"}, []string{"A", "B", "C"}, 100},
+		{[]string{"A", "B", "C"}, []string{"D", "B"}, 300},
+	}
 
-	assert.Equal(t, float32(100), state1.Distance(state2))
-	assert.Equal(t, float32(100), state2.Distance(state1))
-	assert.Equal(t, float32(100), state1.Distance(state3))
-	assert.Equal(t, float32(0), state3.Distance(state1))
-	assert.Equal(t, float32(0), state1.Distance(state4))
-	assert.Equal(t, float32(0), state4.Distance(state1))
-	assert.Equal(t, float32(200), state1.Distance(state5))
-	assert.Equal(t, float32(0), state5.Distance(state1))
-	assert.Equal(t, float32(200), state2.Distance(state5))
-	assert.Equal(t, float32(0), state5.Distance(state2))
+	for _, test := range tests {
+		state1 := StateOf(test.state1...)
+		state2 := StateOf(test.state2...)
+		assert.Equal(t, test.expect, state1.Distance(state2),
+			"state1=%s, state2=%s", state1, state2)
+	}
 }
 
 func TestStateString(t *testing.T) {

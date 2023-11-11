@@ -226,18 +226,37 @@ func (s *State) Apply(effects *State) error {
 }
 
 // Distance estimates the distance to the goal state as the number of differing keys.
-func (s *State) Distance(goal *State) (diff float32) {
-	for _, elem := range goal.vx {
-		k, v := elem.Fact(), elem.Expr()
-		y := expr(v).Percent()
-		x := s.load(fact(k)).Percent()
+func (state *State) Distance(goal *State) (diff float32) {
+	i, j := 0, 0
+	for i < len(goal.vx) && j < len(state.vx) {
+		f0 := goal.vx[i].Fact()
+		f1 := state.vx[j].Fact()
+
 		switch {
-		case x > y:
-			diff += x - y
-		case x < y:
-			diff += y - x
+		case f1 == f0:
+			x := goal.vx[i].Expr().Percent()
+			y := state.vx[j].Expr().Percent()
+			switch {
+			case x > y:
+				diff += x - y
+			case x < y:
+				diff += y - x
+			}
+
+			j++
+			i++
+		case f1 > f0:
+			diff += 100
+			j++
+		case f1 < f0:
+			diff += 100
+			i++
 		}
 	}
+
+	// Add the remaining elements
+	diff += float32(len(goal.vx)-i) * 100
+	diff += float32(len(state.vx)-j) * 100
 	return diff
 }
 
