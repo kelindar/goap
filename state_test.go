@@ -143,17 +143,6 @@ func TestClone(t *testing.T) {
 	assert.False(t, clone.Equals(state))
 }
 
-func TestStateApply(t *testing.T) {
-	state1 := StateOf("A", "B", "C")
-	state2 := StateOf("D", "E")
-	state1.Apply(state2)
-
-	expect := StateOf("A", "B", "C", "D", "E")
-	ok, err := state1.Match(expect)
-	assert.NoError(t, err)
-	assert.True(t, ok)
-}
-
 func TestDistance(t *testing.T) {
 	state1 := StateOf("A", "B", "C")
 	state2 := StateOf("A", "B", "D")
@@ -188,6 +177,33 @@ func TestRemove(t *testing.T) {
 	state.Del("F")
 	assert.Equal(t, "{H=100.00, G=100.00, D=100.00, C=100.00, B=100.00, A=100.00, I=100.00}",
 		state.String())
+}
+
+func TestApply(t *testing.T) {
+	tests := []struct {
+		state1, state2, expect []string
+	}{
+		{[]string{"A"}, []string{"A"}, []string{"A"}},
+		{[]string{"A"}, []string{"A+10"}, []string{"A"}},
+		{[]string{"A"}, []string{"A-10"}, []string{"A=90"}},
+		{[]string{"A"}, []string{"B"}, []string{"A", "B"}},
+		{[]string{"A"}, []string{"A", "B"}, []string{"A", "B"}},
+		{[]string{"A", "B"}, []string{"A"}, []string{"A", "B"}},
+		{[]string{"A", "B"}, []string{"B-10"}, []string{"A", "B=90"}},
+		{[]string{"A", "B"}, []string{"C", "D"}, []string{"A", "B", "C", "D"}},
+	}
+
+	for _, test := range tests {
+		state1 := StateOf(test.state1...)
+		state2 := StateOf(test.state2...)
+		state1.Apply(state2)
+
+		expect := StateOf(test.expect...)
+		ok, err := state1.Match(expect)
+		assert.NoError(t, err)
+		assert.True(t, ok)
+		assert.Equal(t, expect.String(), state1.String())
+	}
 }
 
 func TestApplySort(t *testing.T) {
