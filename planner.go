@@ -4,9 +4,9 @@
 package goap
 
 import (
-	"container/heap"
 	"errors"
 	"fmt"
+	"sync"
 )
 
 // Action represents an action that can be performed.
@@ -23,20 +23,18 @@ type Action interface {
 
 // Plan finds a plan to reach the goal from the start state using the provided actions.
 func Plan(start, goal *State, actions []Action) ([]Action, error) {
-	visited := make(map[uint32]struct{}, 32)
-	pending := &stateHeap{}
-	heap.Init(pending)
-	heap.Push(pending, &State{
-		hx: start.hx,
-		vx: start.vx,
-		node: node{
-			stateCost: 0,
-			heuristic: start.Distance(goal),
-		},
-	})
+	start = start.Clone()
+	start.node = node{
+		heuristic: start.Distance(goal),
+		stateCost: 0,
+	}
 
-	for pending.Len() > 0 {
-		current := heap.Pop(pending).(*State)
+	heap := acquireHeap()
+	heap.Push(start)
+	defer heap.Release()
+
+	for heap.Len() > 0 {
+		current, _ := heap.Pop()
 
 		// If we reached the goal, reconstruct the path.
 		done, err := current.Match(goal)
@@ -47,14 +45,8 @@ func Plan(start, goal *State, actions []Action) ([]Action, error) {
 			return reconstructPlan(current), nil
 		}
 
-		visited[current.Hash()] = struct{}{}
-
 		for _, action := range actions {
 			require, outcome := action.Simulate(current)
-
-			// fmt.Printf("Explore %s\n", action.String())
-
-			// Check if the current state satisfies the action's requirements
 			match, err := current.Match(require)
 			switch {
 			case err != nil:
@@ -63,10 +55,8 @@ func Plan(start, goal *State, actions []Action) ([]Action, error) {
 				continue // Skip this action
 			}
 
-			newState := current.Clone()
-			defer newState.release()
-
 			// Apply the outcome to the new state
+			newState := current.Clone()
 			if err := newState.Apply(outcome); err != nil {
 				return nil, err
 			}
@@ -74,35 +64,31 @@ func Plan(start, goal *State, actions []Action) ([]Action, error) {
 			//fmt.Printf("Action: %s, State: %s, New: %s\n", action.String(), current.String(), newState.String())
 
 			// If the new state was already visited, skip it
-			if _, ok := visited[newState.Hash()]; ok {
+			if _, ok := heap.visit[newState.Hash()]; ok {
+				newState.release()
 				continue
 			}
 
-			newCost := current.stateCost + action.Cost()
-
 			// Check if newState is already planned to be visited or if the newCost is lower
-			foundInPending := false
-			for _, node := range *pending {
-				if node.Equals(newState) {
-					foundInPending = true
-					if newCost < node.stateCost {
-						node.parent = current
-						node.stateCost = newCost
-						node.totalCost = newCost + node.heuristic
-						pending.Update(node) // Update the node's position in the heap
-					}
-					break
-				}
-			}
-
-			if !foundInPending {
+			newCost := current.stateCost + action.Cost()
+			node, found := heap.Find(newState.Hash())
+			switch {
+			case found && newCost < node.stateCost:
+				node.parent = current
+				node.stateCost = newCost
+				node.totalCost = newCost + node.heuristic
+				heap.Fix(node) // Update the node's position in the heap
+				newState.release()
+			case !found:
 				heuristic := newState.Distance(goal)
 				newState.parent = current
 				newState.action = action
 				newState.heuristic = heuristic
 				newState.stateCost = newCost
 				newState.totalCost = newCost + heuristic
-				heap.Push(pending, newState)
+				heap.Push(newState)
+			default: // The newCost is higher, skip it
+				newState.release()
 			}
 		}
 	}
@@ -126,30 +112,124 @@ func reconstructPlan(goalNode *State) []Action {
 	return plan
 }
 
-// ------------------------------------ Heap ------------------------------------
+// ------------------------------------ Heap Pool ------------------------------------
 
-// stateHeap is a min-heap of states.
-type stateHeap []*State
-
-func (h stateHeap) Len() int           { return len(h) }
-func (h stateHeap) Less(i, j int) bool { return h[i].totalCost < h[j].totalCost }
-func (h stateHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i]; h[i].index = i; h[j].index = j }
-
-func (h *stateHeap) Push(x any) {
-	n := x.(*State)
-	n.index = len(*h)
-	*h = append(*h, n)
+var graphs = sync.Pool{
+	New: func() any {
+		return &graph{
+			visit: make(map[uint32]*State, 32),
+			heap:  make([]*State, 0, 32),
+		}
+	},
 }
 
-func (h *stateHeap) Pop() any {
-	old := *h
+// Acquires a new instance of a heap
+func acquireHeap() *graph {
+	h := graphs.Get().(*graph)
+	h.heap = h.heap[:0]
+	clear(h.visit)
+	return h
+}
+
+// Release the instance back to the pool
+func (h *graph) Release() {
+	for _, s := range h.visit {
+		s.release()
+	}
+	graphs.Put(h)
+}
+
+// ------------------------------------ Heap ------------------------------------
+
+type graph struct {
+	visit map[uint32]*State
+	heap  []*State
+}
+
+// Len returns the number of elements in the heap.
+func (h *graph) Len() int { return len(h.heap) }
+
+// Less reports whether the element with
+func (h *graph) Less(i, j int) bool { return h.heap[i].totalCost < h.heap[j].totalCost }
+
+// Swap swaps the elements with indexes i and j.
+func (h *graph) Swap(i, j int) { h.heap[i], h.heap[j] = h.heap[j], h.heap[i] }
+
+// Push pushes the element x onto the heap.
+// The complexity is O(log n) where n = h.Len().
+func (h *graph) Push(v *State) {
+	h.heap = append(h.heap, v)
+	h.up(h.Len() - 1)
+	h.visit[v.Hash()] = v
+}
+
+func (h *graph) Find(hash uint32) (*State, bool) {
+	v, ok := h.visit[hash]
+	return v, ok
+}
+
+// Pop removes and returns the minimum element (according to Less) from the heap.
+// The complexity is O(log n) where n = h.Len().
+// Pop is equivalent to Remove(h, 0).
+func (h *graph) Pop() (*State, bool) {
+	n := h.Len() - 1
+	if n < 0 {
+		return nil, false
+	}
+
+	h.Swap(0, n)
+	h.down(0, n)
+	return h.pop(), true
+}
+
+// Fix re-establishes the heap ordering after the element at index i has changed its value.
+// Changing the value of the element at index i and then calling Fix is equivalent to,
+// but less expensive than, calling Remove(h, i) followed by a Push of the new value.
+// The complexity is O(log n) where n = h.Len().
+func (h *graph) Fix(v *State) {
+	if !h.down(v.index, h.Len()) {
+		h.up(v.index)
+	}
+}
+
+func (h *graph) pop() *State {
+	old := h.heap
 	n := len(old)
 	node := old[n-1]
-	*h = old[0 : n-1]
+	node.visited = true
+
+	h.heap = old[0 : n-1]
+	h.visit[node.Hash()] = node
 	return node
 }
 
-// Update modifies the priority and value of an element in the queue.
-func (h *stateHeap) Update(n *State) {
-	heap.Fix(h, n.index)
+func (h *graph) up(j int) {
+	for {
+		i := (j - 1) / 2 // parent
+		if i == j || !h.Less(j, i) {
+			break
+		}
+		h.Swap(i, j)
+		j = i
+	}
+}
+
+func (h *graph) down(i0, n int) bool {
+	i := i0
+	for {
+		j1 := 2*i + 1
+		if j1 >= n || j1 < 0 { // j1 < 0 after int overflow
+			break
+		}
+		j := j1 // left child
+		if j2 := j1 + 1; j2 < n && h.Less(j2, j1) {
+			j = j2 // = 2*i + 2  // right child
+		}
+		if !h.Less(j, i) {
+			break
+		}
+		h.Swap(i, j)
+		i = j
+	}
+	return i > i0
 }

@@ -45,6 +45,7 @@ type node struct {
 	stateCost float32 // Cost from the start state to this state
 	totalCost float32 // Sum of cost and heuristic
 	index     int     // Index of the state in the heap
+	visited   bool    // Whether the state was visited
 }
 
 // StateOf creates a new state from a list of keys.
@@ -59,9 +60,10 @@ func StateOf(rules ...string) *State {
 }
 
 func (s *State) release() {
-	for i := range s.vx {
+	clear(s.vx)
+	/*for i := range s.vx {
 		s.vx[i] = 0
-	}
+	}*/
 
 	s.hx = 0
 	s.vx = s.vx[:0]

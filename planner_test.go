@@ -23,6 +23,10 @@ BenchmarkPlan/deep-24         	  255236	      4625 ns/op	    3285 B/op	      68 
 BenchmarkPlan/deep-24         	  251654	      4455 ns/op	    3205 B/op	      66 allocs/op
 BenchmarkPlan/deep-24         	  284216	      4133 ns/op	    1426 B/op	      38 allocs/op
 BenchmarkPlan/deep-24         	  311330	      3883 ns/op	    1426 B/op	      38 allocs/op
+BenchmarkPlan/deep-24         	  339420	      3464 ns/op	     503 B/op	       5 allocs/op
+
+BenchmarkPlan/maze-24         	      37	  31458708 ns/op	 2702894 B/op	   80711 allocs/op
+BenchmarkPlan/maze-24         	      63	  18643352 ns/op	 1569536 B/op	   51464 allocs/op
 */
 func BenchmarkPlan(b *testing.B) {
 	b.ReportAllocs()
@@ -34,6 +38,26 @@ func BenchmarkPlan(b *testing.B) {
 			actionOf("Eat", 1.0, StateOf("food>0"), StateOf("hunger-50", "food-5")),
 			actionOf("Forage", 1.0, StateOf("tired<50"), StateOf("tired+20", "food+10", "hunger+5")),
 			actionOf("Sleep", 1.0, StateOf("tired>30"), StateOf("tired-50")),
+		}
+
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			_, err := Plan(start, goal, actions)
+			assert.NoError(b, err)
+		}
+	})
+
+	b.Run("maze", func(b *testing.B) {
+		start := StateOf("A")
+		goal := StateOf("Z")
+		actions := []Action{
+			move("A->B"), move("B->C"), move("C->D"), move("D->E"), move("E->F"), move("F->G"),
+			move("G->H"), move("H->I"), move("I->J"), move("C->X1"), move("E->X2"), move("G->X3"),
+			move("X1->D"), move("X2->F"), move("X3->H"), move("B->Y1"), move("D->Y2"), move("F->Y3"),
+			move("Y1->C"), move("Y2->E"), move("Y3->G"), move("J->K"), move("K->L"), move("L->M"),
+			move("M->N"), move("N->O"), move("O->P"), move("P->Q"), move("Q->R"), move("R->S"),
+			move("S->T"), move("T->U"), move("U->V"), move("V->W"), move("W->X"), move("X->Y"),
+			move("Y->Z"), move("U->Z1"), move("W->Z2"), move("Z1->V"), move("Z2->X"), move("A->Z3"),
 		}
 
 		b.ResetTimer()
@@ -59,7 +83,7 @@ func TestNumericPlan(t *testing.T) {
 		planOf(plan))
 }
 
-func TestLabyrinth(t *testing.T) {
+func TestMaze(t *testing.T) {
 	start := StateOf("A")
 	goal := StateOf("Z")
 	actions := []Action{
