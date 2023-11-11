@@ -12,16 +12,16 @@ const (
 
 type elem uint64
 
-func elemOf(key, value uint32) elem {
-	return elem(key)<<32 | elem(value)
+func elemOf(f fact, e expr) elem {
+	return elem(f)<<32 | elem(e)
 }
 
-func (e elem) Key() uint32 {
-	return uint32(e >> 32)
+func (e elem) Key() fact {
+	return fact(e >> 32)
 }
 
-func (e elem) Value() uint32 {
-	return uint32(e & 0xFFFFFFFF)
+func (e elem) Value() expr {
+	return expr(e & 0xFFFFFFFF)
 }
 
 // hashset is a map-like data-structure for state
@@ -64,7 +64,7 @@ func (m *hashset) Release() {
 	pool.Put(m)
 }
 
-func (m *hashset) findLinear(key uint32) (int, bool) {
+func (m *hashset) findLinear(key fact) (int, bool) {
 	for i := 0; i < len(m.data); i++ {
 		if key == m.data[i].Key() {
 			return i, true
@@ -73,7 +73,7 @@ func (m *hashset) findLinear(key uint32) (int, bool) {
 	return 0, false
 }
 
-func (m *hashset) find(key uint32) (int, bool) {
+func (m *hashset) find(key fact) (int, bool) {
 	if m.Count() <= linearCutoff {
 		return m.findLinear(key)
 	}
@@ -93,7 +93,7 @@ func (m *hashset) sort() {
 
 // Load returns the value stored in the map for a key, or nil if no value is
 // present. The ok result indicates whether value was found in the map.
-func (m *hashset) Load(key uint32) (uint32, bool) {
+func (m *hashset) Load(key fact) (expr, bool) {
 	if i, ok := m.find(key); ok {
 		return m.data[i].Value(), true
 	}
@@ -101,19 +101,19 @@ func (m *hashset) Load(key uint32) (uint32, bool) {
 }
 
 // Store sets the value for a key.
-func (m *hashset) Store(key, val uint32) {
-	if i, ok := m.find(key); ok {
-		m.data[i] = elemOf(key, val)
+func (m *hashset) Store(f fact, e expr) {
+	if i, ok := m.find(f); ok {
+		m.data[i] = elemOf(f, e)
 		return
 	}
 
-	m.data = append(m.data, elemOf(key, val))
+	m.data = append(m.data, elemOf(f, e))
 	m.sort()
 }
 
 // Delete deletes the value for a key.
-func (m *hashset) Delete(key uint32) {
-	i, ok := m.find(key)
+func (m *hashset) Delete(f fact) {
+	i, ok := m.find(f)
 	if !ok {
 		return
 	}
@@ -128,7 +128,7 @@ func (m *hashset) Count() int {
 }
 
 // Range calls f sequentially for each key and value present in the map.
-func (m *hashset) Range(fn func(key, value uint32)) {
+func (m *hashset) Range(fn func(f fact, e expr)) {
 	for _, v := range m.data {
 		fn(v.Key(), v.Value())
 	}
@@ -136,7 +136,7 @@ func (m *hashset) Range(fn func(key, value uint32)) {
 
 // RangeErr calls f sequentially for each key and value present in the map. If fn
 // returns error, range stops the iteration.
-func (m *hashset) RangeErr(fn func(key, value uint32) error) error {
+func (m *hashset) RangeErr(fn func(f fact, e expr) error) error {
 	for _, v := range m.data {
 		if err := fn(v.Key(), v.Value()); err != nil {
 			return err

@@ -1,6 +1,6 @@
 module github.com/kelindar/goap
 
-go 1.20
+go 1.21
 
 require (
 	github.com/BigJk/ramen v0.2.0

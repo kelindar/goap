@@ -12,12 +12,12 @@ import (
 
 /*
 cpu: 13th Gen Intel(R) Core(TM) i7-13700K
-BenchmarkState/clone-24         	18604708	        62.52 ns/op	     320 B/op	       2 allocs/op
-BenchmarkState/has-24           	92312662	        13.20 ns/op	       0 B/op	       0 allocs/op
-BenchmarkState/add-24           	15189853	        78.43 ns/op	      40 B/op	       4 allocs/op
-BenchmarkState/remove-24        	15478218	        77.53 ns/op	      40 B/op	       4 allocs/op
-BenchmarkState/apply-24         	82580360	        13.79 ns/op	       0 B/op	       0 allocs/op
-BenchmarkState/distance-24      	57231428	        21.44 ns/op	       0 B/op	       0 allocs/op
+BenchmarkState/clone-24         	14451336	        83.02 ns/op	     152 B/op	       2 allocs/op
+BenchmarkState/match-24         	77301656	        15.70 ns/op	       0 B/op	       0 allocs/op
+BenchmarkState/add-24           	13697472	        83.10 ns/op	      40 B/op	       4 allocs/op
+BenchmarkState/remove-24        	14342314	        85.82 ns/op	      40 B/op	       4 allocs/op
+BenchmarkState/apply-24         	32194454	        36.96 ns/op	       0 B/op	       0 allocs/op
+BenchmarkState/distance-24      	47947640	        25.10 ns/op	       0 B/op	       0 allocs/op
 */
 func BenchmarkState(b *testing.B) {
 	b.ReportAllocs()

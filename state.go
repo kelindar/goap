@@ -208,9 +208,9 @@ func StateOf(rules ...string) State {
 // rehash rehashes the state
 func (s *State) rehash() {
 	s.h = 0
-	s.m.Range(func(k, v uint32) {
+	s.m.Range(func(k fact, v expr) {
 		//s.h ^= (uint64(k) << 32) | (uint64(v)*0xdeece66d + 0xb)
-		s.h ^= (k | (v*0xdeece66d + 0xb))
+		s.h ^= (uint32(k) | (uint32(v)*0xdeece66d + 0xb))
 	})
 }
 
@@ -225,7 +225,7 @@ func (s *State) Add(rule string) error {
 		return err
 	}
 
-	s.m.Store(uint32(k), uint32(v))
+	s.m.Store(k, v)
 	s.rehash()
 	return nil
 }
@@ -237,13 +237,13 @@ func (s *State) Remove(rule string) error {
 		return err
 	}
 
-	s.m.Delete(uint32(k))
+	s.m.Delete(k)
 	s.rehash()
 	return nil
 }
 
 func (s State) load(f fact) expr {
-	v, ok := s.m.Load(uint32(f))
+	v, ok := s.m.Load(f)
 	if !ok {
 		return exprOf(opEqual, 0)
 	}
@@ -253,7 +253,7 @@ func (s State) load(f fact) expr {
 // Match checks if the State satisfies all the rules of the other state.
 func (s *State) Match(other State) (bool, error) {
 	match := true
-	err := other.m.RangeErr(func(k, v uint32) error {
+	err := other.m.RangeErr(func(k fact, v expr) error {
 		f, e := fact(k), expr(v)
 		x := s.load(f)
 
@@ -293,7 +293,7 @@ func (s *State) Match(other State) (bool, error) {
 // Apply adds (applies) the keys from the effects to the state.
 func (s *State) Apply(effects State) error {
 	defer s.rehash()
-	return effects.m.RangeErr(func(k, v uint32) error {
+	return effects.m.RangeErr(func(k fact, v expr) error {
 		f, e := fact(k), expr(v)
 		x := s.load(f)
 
@@ -305,11 +305,11 @@ func (s *State) Apply(effects State) error {
 		// Apply the effect to the state
 		switch e.Operator() {
 		case opEqual:
-			s.m.Store(k, e.Value())
+			s.m.Store(k, e)
 		case opIncrement:
-			s.m.Store(k, uint32(exprOf(x.Operator(), x.Percent()+e.Percent())))
+			s.m.Store(k, exprOf(x.Operator(), x.Percent()+e.Percent()))
 		case opDecrement:
-			s.m.Store(k, uint32(exprOf(x.Operator(), x.Percent()-e.Percent())))
+			s.m.Store(k, exprOf(x.Operator(), x.Percent()-e.Percent()))
 		default:
 			return fmt.Errorf("plan: cannot apply '%s%s', invalid predict operator '%s'", f.String(), e.String(), e.Operator().String())
 		}
@@ -319,7 +319,7 @@ func (s *State) Apply(effects State) error {
 
 // Distance estimates the distance to the goal state as the number of differing keys.
 func (s *State) Distance(goal State) (diff float32) {
-	goal.m.Range(func(k, v uint32) {
+	goal.m.Range(func(k fact, v expr) {
 		y := expr(v).Percent()
 		x := s.load(fact(k)).Percent()
 		switch {
@@ -353,8 +353,8 @@ func (s *State) Clone() State {
 // String returns a string representation of the state.
 func (s *State) String() string {
 	values := make([]string, 0, s.m.Count())
-	s.m.Range(func(k, v uint32) {
-		values = append(values, fact(k).String()+expr(v).String())
+	s.m.Range(func(k fact, v expr) {
+		values = append(values, k.String()+v.String())
 	})
 
 	sort.Strings(values)
