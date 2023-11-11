@@ -12,7 +12,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/kelindar/intmap"
 	"github.com/zeebo/xxh3"
 )
 
@@ -192,13 +191,13 @@ func (e expr) String() string {
 
 // State represents a state of the world.
 type State struct {
-	h uint64      // Hash of the state
-	m *intmap.Map // Map of facts
+	h uint32   // Hash of the state
+	m *hashset // Map of facts
 }
 
 // StateOf creates a new state from a list of keys.
 func StateOf(rules ...string) State {
-	state := State{m: intmap.New(8, 0.9)}
+	state := State{m: newHashSet(len(rules))}
 	for _, fact := range rules {
 		state.Add(fact)
 	}
@@ -209,9 +208,14 @@ func StateOf(rules ...string) State {
 // rehash rehashes the state
 func (s *State) rehash() {
 	s.h = 0
-	s.m.RangeEach(func(k, v uint32) {
-		s.h ^= (uint64(k) << 32) | (uint64(v)*0xdeece66d + 0xb)
+	s.m.Range(func(k, v uint32) {
+		//s.h ^= (uint64(k) << 32) | (uint64(v)*0xdeece66d + 0xb)
+		s.h ^= (k | (v*0xdeece66d + 0xb))
 	})
+}
+
+func (s *State) release() {
+	s.m.Release()
 }
 
 // Add adds a key to the state.
@@ -315,7 +319,7 @@ func (s *State) Apply(effects State) error {
 
 // Distance estimates the distance to the goal state as the number of differing keys.
 func (s *State) Distance(goal State) (diff float32) {
-	goal.m.RangeEach(func(k, v uint32) {
+	goal.m.Range(func(k, v uint32) {
 		y := expr(v).Percent()
 		x := s.load(fact(k)).Percent()
 		switch {
@@ -334,7 +338,7 @@ func (s *State) Equals(other State) bool {
 }
 
 // Hash returns a hash of the state.
-func (s *State) Hash() (h uint64) {
+func (s *State) Hash() (h uint32) {
 	return s.h
 }
 
@@ -349,7 +353,7 @@ func (s *State) Clone() State {
 // String returns a string representation of the state.
 func (s *State) String() string {
 	values := make([]string, 0, s.m.Count())
-	s.m.RangeEach(func(k, v uint32) {
+	s.m.Range(func(k, v uint32) {
 		values = append(values, fact(k).String()+expr(v).String())
 	})
 

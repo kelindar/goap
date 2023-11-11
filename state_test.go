@@ -127,6 +127,7 @@ func TestStateEquals(t *testing.T) {
 	assert.False(t, state4.Equals(state1))
 	assert.False(t, state4.Equals(state5))
 }
+
 func TestClone(t *testing.T) {
 	state := StateOf("A", "B", "C")
 	clone := state.Clone()
@@ -138,6 +139,7 @@ func TestClone(t *testing.T) {
 	state.Remove("A")
 	assert.False(t, clone.Equals(state))
 }
+
 func TestStateApply(t *testing.T) {
 	state1 := StateOf("A", "B", "C")
 	state2 := StateOf("D", "E")

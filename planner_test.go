@@ -12,6 +12,12 @@ import (
 /*
 cpu: 13th Gen Intel(R) Core(TM) i7-13700K
 BenchmarkPlan/deep-24         	     244	   4674232 ns/op	24156188 B/op	     117 allocs/op
+BenchmarkPlan/deep-24         	    1750	    669815 ns/op	 5378442 B/op	      98 allocs/op
+BenchmarkPlan/deep-24         	    2421	    475609 ns/op	 5378445 B/op	      98 allocs/op
+BenchmarkPlan/deep-24         	    7272	    154309 ns/op	 1347781 B/op	      98 allocs/op
+BenchmarkPlan/deep-24         	   26125	     45611 ns/op	  268996 B/op	     100 allocs/op
+BenchmarkPlan/deep-24         	   34647	     34471 ns/op	    3898 B/op	      98 allocs/op
+BenchmarkPlan/deep-24         	  199707	      5966 ns/op	    3763 B/op	      98 allocs/op
 */
 func BenchmarkPlan(b *testing.B) {
 	b.ReportAllocs()

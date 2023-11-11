@@ -38,7 +38,7 @@ func Plan(start, goal State, actions []Action) ([]Action, error) {
 
 	heap.Push(openSet, startNode)
 
-	closedSet := make(map[uint64]struct{})
+	closedSet := make(map[uint32]struct{})
 
 	for openSet.Len() > 0 {
 		current := heap.Pop(openSet).(*node)
@@ -67,6 +67,7 @@ func Plan(start, goal State, actions []Action) ([]Action, error) {
 
 			outcome := action.Predict(current.state)
 			newState := current.state.Clone()
+			defer newState.release()
 
 			// Apply the outcome to the new state
 			if err := newState.Apply(outcome); err != nil {
