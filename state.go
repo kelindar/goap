@@ -5,17 +5,12 @@ package goap
 
 import (
 	"fmt"
-	"regexp"
 	"sort"
 	"strings"
 	"sync"
 )
 
-var (
-	factRegex    = regexp.MustCompile(`^(!*)([a-zA-Z_]+)$`)
-	factCache    = new(sync.Map)
-	linearCutoff = 8 // 1 cache line
-)
+const linearCutoff = 8 // 1 cache line
 
 var states = sync.Pool{
 	New: func() interface{} {

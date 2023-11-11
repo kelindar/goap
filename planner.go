@@ -13,14 +13,9 @@ import (
 type Action interface {
 	fmt.Stringer
 
-	// Require returns the state that is required for this action to be performed.
-	Require() *State
-
-	// Predict returns the state that is predicted to be the outcome of this action.
-	Predict(*State) *State
-
-	// Perform performs the action and returns the outcome.
-	Perform() bool
+	// Simulate returns requirements and outcomes given the current
+	// state (model) of the world.
+	Simulate(*State) (require, outcome *State)
 
 	// Cost returns the cost of performing the action.
 	Cost() float32
@@ -55,9 +50,10 @@ func Plan(start, goal *State, actions []Action) ([]Action, error) {
 		closedSet[current.state.Hash()] = struct{}{}
 
 		for _, action := range actions {
+			require, outcome := action.Simulate(current.state)
 
 			// Check if the current state satisfies the action's requirements
-			match, err := current.state.Match(action.Require())
+			match, err := current.state.Match(require)
 			switch {
 			case err != nil:
 				return nil, err
@@ -65,7 +61,6 @@ func Plan(start, goal *State, actions []Action) ([]Action, error) {
 				continue // Skip this action
 			}
 
-			outcome := action.Predict(current.state)
 			newState := current.state.Clone()
 			defer newState.release()
 

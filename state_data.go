@@ -5,9 +5,12 @@ import (
 	"math"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/zeebo/xxh3"
 )
+
+var factCache = new(sync.Map)
 
 // ------------------------------------ Fact ------------------------------------
 

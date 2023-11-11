@@ -110,24 +110,12 @@ type testAction struct {
 	outcome *State
 }
 
-func (a *testAction) Require() *State {
-	return a.require
-}
-
-func (a *testAction) Predict(_ *State) *State {
-	return a.outcome
+func (a *testAction) Simulate(_ *State) (*State, *State) {
+	return a.require, a.outcome
 }
 
 func (a *testAction) Cost() float32 {
 	return a.cost
-}
-
-func (a *testAction) Perform() bool {
-	return true
-}
-
-func (a *testAction) IsValid() bool {
-	return true
 }
 
 func (a *testAction) String() string {
