@@ -4,6 +4,7 @@
 package goap
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -25,6 +26,7 @@ BenchmarkPlan/deep-24         	  284216	      4133 ns/op	    1426 B/op	      38 
 BenchmarkPlan/deep-24         	  311330	      3883 ns/op	    1426 B/op	      38 allocs/op
 BenchmarkPlan/deep-24         	  339420	      3464 ns/op	     503 B/op	       5 allocs/op
 BenchmarkPlan/deep-24         	  380756	      3103 ns/op	     230 B/op	       1 allocs/op
+BenchmarkPlan/deep-24         	  337836	      3519 ns/op	     230 B/op	       1 allocs/op
 
 BenchmarkPlan/maze-24         	      37	  31458708 ns/op	 2702894 B/op	   80711 allocs/op
 BenchmarkPlan/maze-24         	      63	  18643352 ns/op	 1569536 B/op	   51464 allocs/op
@@ -32,6 +34,9 @@ BenchmarkPlan/maze-24         	      64	  18393683 ns/op	 1628704 B/op	   51464 
 BenchmarkPlan/maze-24         	      69	  16841377 ns/op	  794077 B/op	   23827 allocs/op
 BenchmarkPlan/maze-24         	      75	  15496365 ns/op	  382162 B/op	   11919 allocs/op
 BenchmarkPlan/maze-24         	      80	  14595842 ns/op	   62274 B/op	      10 allocs/op
+BenchmarkPlan/maze-24         	      81	  14649933 ns/op	   48769 B/op	       6 allocs/op
+BenchmarkPlan/maze-24         	    1171	   1019360 ns/op	    2167 B/op	       1 allocs/op
+BenchmarkPlan/maze-24         	    1240	    984825 ns/op	    2214 B/op	       1 allocs/op
 */
 func BenchmarkPlan(b *testing.B) {
 	b.ReportAllocs()
@@ -138,7 +143,7 @@ func move(m string) Action {
 func planOf(plan []Action) []string {
 	var result []string
 	for _, action := range plan {
-		result = append(result, action.String())
+		result = append(result, action.(fmt.Stringer).String())
 	}
 	return result
 }

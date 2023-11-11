@@ -10,7 +10,7 @@ import (
 	"sync"
 )
 
-const linearCutoff = 8 // 1 cache line
+const linearCutoff = 0 // 1 cache line
 
 var pool = sync.Pool{
 	New: func() any {
@@ -61,10 +61,6 @@ func StateOf(rules ...string) *State {
 
 func (s *State) release() {
 	clear(s.vx)
-	/*for i := range s.vx {
-		s.vx[i] = 0
-	}*/
-
 	s.hx = 0
 	s.vx = s.vx[:0]
 	s.node = node{}
@@ -99,7 +95,7 @@ func (s *State) find(key fact) (int, bool) {
 // Store stores a key in the state, note that it requires rehashing the state
 // and sorting the keys. This is NOT DONE by this method. The return value
 // indicates whether the key was added to the state (true) or updated (false).
-func (s *State) store(k fact, v expr) bool {
+func (s *State) store(k fact, v expr) {
 	r := ruleOf(k, v)
 
 	// Check if the key already exists
@@ -107,13 +103,13 @@ func (s *State) store(k fact, v expr) bool {
 		s.hx ^= s.vx[i].Hash()
 		s.hx ^= r.Hash()
 		s.vx[i] = r
-		return false
+		return
 	}
 
 	// If not, add it to the state
 	s.hx ^= r.Hash()
 	s.vx = append(s.vx, ruleOf(k, v))
-	return true
+	s.sort()
 }
 
 // Add adds a key to the state.
@@ -123,9 +119,7 @@ func (s *State) Add(rule string) error {
 		return err
 	}
 
-	if added := s.store(k, v); added {
-		s.sort()
-	}
+	s.store(k, v)
 	return nil
 }
 
@@ -158,40 +152,54 @@ func (s State) load(f fact) expr {
 }
 
 // Match checks if the State satisfies all the rules of the other state.
-func (s *State) Match(other *State) (bool, error) {
-	match := true
-	for _, elem := range other.vx {
-		f, e := elem.Fact(), elem.Expr()
-		x := s.load(f)
+func (state *State) Match(needs *State) (bool, error) {
+	i, j := 0, 0
+	for i < len(needs.vx) && j < len(state.vx) {
+		f0 := needs.vx[i].Fact()
+		f1 := state.vx[j].Fact()
 
-		// Current state must be a full state
-		if x.Operator() != opEqual {
-			return false, fmt.Errorf("plan: cannot match '%s%s', invalid state '%s'", f.String(), e.String(), x.String())
-		}
+		switch {
+		case f1 == f0:
+			e0 := needs.vx[i].Expr()
+			e1 := state.vx[j].Expr()
 
-		// Check if the state satisfies the rule
-		switch e.Operator() {
-		case opEqual:
-			match = x.Value() == e.Value()
-		case opLess:
-			match = x.Value() < e.Value()
-		case opGreater:
-			match = x.Value() > e.Value()
-		default:
-			return false, fmt.Errorf("plan: cannot match '%s%s', invalid operator '%s'", f.String(), e.String(), e.Operator().String())
-		}
+			if e1.Operator() != opEqual {
+				return false, fmt.Errorf("plan: cannot match '%s%s', invalid state '%s'",
+					f1.String(), e0.String(), e1.String())
+			}
 
-		// Short-circuit if the state doesn't match
-		if !match {
+			match := false
+			switch e0.Operator() {
+			case opEqual:
+				match = e1.Value() == e0.Value()
+			case opLess:
+				match = e1.Value() < e0.Value()
+			case opGreater:
+				match = e1.Value() > e0.Value()
+			default:
+				return false, fmt.Errorf("plan: cannot match '%s%s', invalid operator '%s'",
+					f1.String(), e0.String(), e0.Operator().String())
+			}
+
+			if !match {
+				return false, nil
+			}
+
+			j++
+			i++
+		case f1 > f0:
+			j++
+		default: // No match
 			return false, nil
 		}
 	}
-	return match, nil
+
+	// Check if all elements of other.vx were matched
+	return i == len(needs.vx), nil
 }
 
 // Apply adds (applies) the keys from the effects to the state.
 func (s *State) Apply(effects *State) error {
-	unsorted := false
 	for _, elem := range effects.vx {
 		f, e := elem.Fact(), elem.Expr()
 		x := s.load(f)
@@ -204,21 +212,16 @@ func (s *State) Apply(effects *State) error {
 		// Apply the effect to the state
 		switch e.Operator() {
 		case opEqual:
-			unsorted = s.store(f, e) || unsorted
+			s.store(f, e)
 		case opIncrement:
-			unsorted = s.store(f, exprOf(x.Operator(), x.Percent()+e.Percent())) || unsorted
+			s.store(f, exprOf(x.Operator(), x.Percent()+e.Percent()))
 		case opDecrement:
-			unsorted = s.store(f, exprOf(x.Operator(), x.Percent()-e.Percent())) || unsorted
+			s.store(f, exprOf(x.Operator(), x.Percent()-e.Percent()))
 		default:
 			return fmt.Errorf("plan: cannot apply '%s%s', invalid predict operator '%s'", f.String(), e.String(), e.Operator().String())
 		}
 	}
 
-	// Only sort if we have more than 8 elements, otherwise it's faster to
-	// just do a linear search.
-	if unsorted && len(s.vx) > linearCutoff {
-		s.sort()
-	}
 	return nil
 }
 

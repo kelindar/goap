@@ -5,13 +5,11 @@ package goap
 
 import (
 	"errors"
-	"fmt"
 	"sync"
 )
 
 // Action represents an action that can be performed.
 type Action interface {
-	fmt.Stringer
 
 	// Simulate returns requirements and outcomes given the current
 	// state (model) of the world.
