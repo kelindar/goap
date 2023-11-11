@@ -12,12 +12,12 @@ import (
 
 /*
 cpu: 13th Gen Intel(R) Core(TM) i7-13700K
-BenchmarkState/clone-24         	14451336	        83.02 ns/op	     152 B/op	       2 allocs/op
-BenchmarkState/match-24         	77301656	        15.70 ns/op	       0 B/op	       0 allocs/op
-BenchmarkState/add-24           	13697472	        83.10 ns/op	      40 B/op	       4 allocs/op
-BenchmarkState/remove-24        	14342314	        85.82 ns/op	      40 B/op	       4 allocs/op
-BenchmarkState/apply-24         	32194454	        36.96 ns/op	       0 B/op	       0 allocs/op
-BenchmarkState/distance-24      	47947640	        25.10 ns/op	       0 B/op	       0 allocs/op
+BenchmarkState/clone-24         	13898298	        85.07 ns/op	     208 B/op	       2 allocs/op
+BenchmarkState/match-24         	127962982	        9.433 ns/op	       0 B/op	       0 allocs/op
+BenchmarkState/add-24           	13698566	        86.97 ns/op	      40 B/op	       4 allocs/op
+BenchmarkState/remove-24        	13832996	        85.93 ns/op	      40 B/op	       4 allocs/op
+BenchmarkState/apply-24         	52089889	        22.84 ns/op	       0 B/op	       0 allocs/op
+BenchmarkState/distance-24      	77184315	        16.42 ns/op	       0 B/op	       0 allocs/op
 */
 func BenchmarkState(b *testing.B) {
 	b.ReportAllocs()
@@ -49,7 +49,7 @@ func BenchmarkState(b *testing.B) {
 		state := StateOf()
 		state.Add("A")
 		for i := 0; i < b.N; i++ {
-			state.Remove("A")
+			state.Del("A")
 		}
 	})
 
@@ -136,7 +136,7 @@ func TestClone(t *testing.T) {
 	assert.True(t, clone.Equals(state))
 
 	// Ensure the clone is a separate instance
-	state.Remove("A")
+	state.Del("A")
 	assert.False(t, clone.Equals(state))
 }
 
@@ -212,8 +212,17 @@ func TestParse(t *testing.T) {
 }
 func TestStateString(t *testing.T) {
 	state := StateOf("A", "B", "C")
-	assert.Equal(t, "{A=100.00, B=100.00, C=100.00}", state.String())
+	assert.Equal(t, "{C=100.00, B=100.00, A=100.00}", state.String())
 
 	state = StateOf()
 	assert.Equal(t, "{}", state.String())
+}
+
+func TestRemove(t *testing.T) {
+	state := StateOf("A", "B", "C", "D", "E", "F", "G", "H", "I")
+
+	state.Del("E")
+	state.Del("F")
+	assert.Equal(t, "{H=100.00, G=100.00, D=100.00, C=100.00, B=100.00, A=100.00, I=100.00}",
+		state.String())
 }

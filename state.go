@@ -12,8 +12,8 @@ import (
 
 const linearCutoff = 8 // 1 cache line
 
-var states = sync.Pool{
-	New: func() interface{} {
+var pool = sync.Pool{
+	New: func() any {
 		return &State{
 			hx: 0,
 			vx: make([]rule, 0, 16),
@@ -22,7 +22,7 @@ var states = sync.Pool{
 }
 
 func newState(capacity int) *State {
-	state := states.Get().(*State)
+	state := pool.Get().(*State)
 	if cap(state.vx) < capacity {
 		state.vx = make([]rule, 0, capacity)
 	}
@@ -57,6 +57,17 @@ func StateOf(rules ...string) *State {
 	return state
 }
 
+func (s *State) release() {
+	for i := range s.vx {
+		s.vx[i] = 0
+	}
+
+	s.hx = 0
+	s.vx = s.vx[:0]
+	s.node = node{}
+	pool.Put(s)
+}
+
 // rehash rehashes the state
 func (s *State) rehash() {
 	s.hx = 0
@@ -66,14 +77,8 @@ func (s *State) rehash() {
 	}
 }
 
-func (s *State) release() {
-	for i := range s.vx {
-		s.vx[i] = 0
-	}
-
-	s.hx = 0
-	s.vx = s.vx[:0]
-	states.Put(s)
+func (s *State) sort() {
+	sort.Slice(s.vx, func(i, j int) bool { return s.vx[i].Fact() > s.vx[j].Fact() })
 }
 
 func (s *State) findLinear(key fact) (int, bool) {
@@ -90,17 +95,11 @@ func (s *State) find(key fact) (int, bool) {
 		return s.findLinear(key)
 	}
 
-	x := sort.Search(len(s.vx), func(i int) bool { return s.vx[i].Fact() >= key })
+	x := sort.Search(len(s.vx), func(i int) bool { return s.vx[i].Fact() <= key })
 	if x < len(s.vx) && s.vx[x].Fact() == key {
 		return x, true
 	}
 	return x, false
-}
-
-func (s *State) sort() {
-	if len(s.vx) > linearCutoff {
-		sort.Slice(s.vx, func(i, j int) bool { return s.vx[i].Fact() < s.vx[j].Fact() })
-	}
 }
 
 // Store stores a key in the state, note that it requires rehashing the state
@@ -132,8 +131,8 @@ func (s *State) Add(rule string) error {
 	return nil
 }
 
-// Remove removes a key from the state.
-func (s *State) Remove(rule string) error {
+// Del removes a key from the state.
+func (s *State) Del(rule string) error {
 	k, _, err := parseRule(rule)
 	if err != nil {
 		return err
@@ -144,9 +143,11 @@ func (s *State) Remove(rule string) error {
 		return nil
 	}
 
-	// TODO: sort inverse, trim tail
+	// If we deleted, we need to sort and rehash. The sorting will place
+	// the zero value at the end of the slice, so we can just trim it.
 	s.vx[i] = 0
 	s.sort()
+	s.vx = s.vx[:len(s.vx)-1]
 	s.rehash()
 	return nil
 }
@@ -261,6 +262,5 @@ func (s *State) String() string {
 		values = append(values, elem.Fact().String()+elem.Expr().String())
 	}
 
-	sort.Strings(values)
 	return "{" + strings.Join(values, ", ") + "}"
 }
