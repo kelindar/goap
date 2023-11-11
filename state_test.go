@@ -74,8 +74,8 @@ func TestMatchSimple(t *testing.T) {
 	state2 := StateOf("A", "B")
 
 	// Must be sorted
-	assert.Equal(t, "{C=100.00, B=100.00, A=100.00}", state1.String())
-	assert.Equal(t, "{B=100.00, A=100.00}", state2.String())
+	assert.Equal(t, "{C=100, B=100, A=100}", state1.String())
+	assert.Equal(t, "{B=100, A=100}", state2.String())
 
 	ok1, err := state1.Match(state2)
 	assert.NoError(t, err)
@@ -170,7 +170,7 @@ func TestDistance(t *testing.T) {
 
 func TestStateString(t *testing.T) {
 	state := StateOf("A", "B", "C")
-	assert.Equal(t, "{C=100.00, B=100.00, A=100.00}", state.String())
+	assert.Equal(t, "{C=100, B=100, A=100}", state.String())
 
 	state = StateOf()
 	assert.Equal(t, "{}", state.String())
@@ -181,7 +181,7 @@ func TestRemove(t *testing.T) {
 
 	state.Del("E")
 	state.Del("F")
-	assert.Equal(t, "{H=100.00, G=100.00, D=100.00, C=100.00, B=100.00, A=100.00, I=100.00}",
+	assert.Equal(t, "{H=100, G=100, D=100, C=100, B=100, A=100, I=100}",
 		state.String())
 }
 
@@ -218,12 +218,12 @@ func TestApplySort(t *testing.T) {
 
 	// Under 8 elements, should not sort
 	state1.Apply(state2)
-	assert.Equal(t, "{D=100.00, B=100.00, A=100.00}", state1.String())
+	assert.Equal(t, "{D=100, B=100, A=100}", state1.String())
 
 	// Over 8 elements, should sort
 	state3 := StateOf("D", "E", "F", "G", "H", "I", "J")
 	state1.Apply(state3)
-	assert.Equal(t, "{H=100.00, G=100.00, J=100.00, D=100.00, F=100.00, B=100.00, E=100.00, A=100.00, I=100.00}",
+	assert.Equal(t, "{H=100, G=100, J=100, D=100, F=100, B=100, E=100, A=100, I=100}",
 		state1.String())
 }
 

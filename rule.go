@@ -105,7 +105,7 @@ parseOperator:
 
 const (
 	valueMin = 0
-	valueMax = 10000 // 100.00 is the max value for a percentage
+	valueMax = 100
 )
 
 const (
@@ -152,7 +152,7 @@ func exprOf(op operator, value float32) expr {
 	if value > 100 {
 		value = 100
 	}
-	return expr(uint32(op)<<28 | uint32(value*100))
+	return expr(uint32(op)<<28 | uint32(value))
 }
 
 // Operator returns the operator of the effect.
@@ -161,21 +161,13 @@ func (e expr) Operator() operator {
 }
 
 // Value returns the value of the effect.
-func (e expr) Value() uint32 {
-	return uint32(e & 0xFFFF)
-}
-
-// Percent returns the value as a percentage.
-func (e expr) Percent() float32 {
-	if e.Value() >= valueMax {
-		return 100
-	}
-	return float32(e.Value()) / 100
+func (e expr) Value() float32 {
+	return float32(e & 0xFFFF)
 }
 
 // String returns the string representation of the effect.
 func (e expr) String() string {
-	return e.Operator().String() + strconv.FormatFloat(float64(e.Percent()), 'f', 2, 32)
+	return e.Operator().String() + strconv.FormatUint(uint64(e.Value()), 10)
 }
 
 // ------------------------------------ Packed Data ------------------------------------

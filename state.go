@@ -214,9 +214,9 @@ func (s *State) Apply(effects *State) error {
 		case opEqual:
 			s.store(f, e)
 		case opIncrement:
-			s.store(f, exprOf(x.Operator(), x.Percent()+e.Percent()))
+			s.store(f, exprOf(x.Operator(), x.Value()+e.Value()))
 		case opDecrement:
-			s.store(f, exprOf(x.Operator(), x.Percent()-e.Percent()))
+			s.store(f, exprOf(x.Operator(), x.Value()-e.Value()))
 		default:
 			return fmt.Errorf("plan: cannot apply '%s%s', invalid predict operator '%s'", f.String(), e.String(), e.Operator().String())
 		}
@@ -234,8 +234,8 @@ func (state *State) Distance(goal *State) (diff float32) {
 
 		switch {
 		case f1 == f0:
-			x := goal.vx[i].Expr().Percent()
-			y := state.vx[j].Expr().Percent()
+			x := goal.vx[i].Expr().Value()
+			y := state.vx[j].Expr().Value()
 			switch {
 			case x > y:
 				diff += x - y
