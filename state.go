@@ -10,7 +10,7 @@ import (
 	"sync"
 )
 
-const linearCutoff = 8 // 1 cache line
+const linearCutoff = 16 // 2 cache line
 
 var pool = sync.Pool{
 	New: func() any {
@@ -45,6 +45,7 @@ type node struct {
 	stateCost float32 // Cost from the start state to this state
 	totalCost float32 // Sum of cost and heuristic
 	index     int     // Index of the state in the heap
+	depth     int     // Depth of the state in the tree
 	visited   bool    // Whether the state was visited
 }
 
@@ -225,38 +226,47 @@ func (s *State) Apply(effects *State) error {
 	return nil
 }
 
-// Distance estimates the distance to the goal state as the number of differing keys.
+// Distance estimates the distance to the goal state.
 func (state *State) Distance(goal *State) (diff float32) {
-	i, j := 0, 0
-	for i < len(goal.vx) && j < len(state.vx) {
-		f0 := goal.vx[i].Fact()
-		f1 := state.vx[j].Fact()
+	i := 0
+	for _, g := range goal.vx {
+		x := g.Expr().Value()
+		v := float32(0)
 
-		switch {
-		case f1 == f0:
-			x := goal.vx[i].Expr().Value()
-			y := state.vx[j].Expr().Value()
+		// Find the value in the state
+		for ; i < len(state.vx); i++ {
+			if state.vx[i].Fact() == g.Fact() {
+				v = state.vx[i].Expr().Value()
+				break // Found
+			}
+			if state.vx[i].Fact() < g.Fact() {
+				break // Not found
+			}
+		}
+
+		// Calculate the difference, normalized
+		switch g.Expr().Operator() {
+		case opEqual:
 			switch {
-			case x > y:
-				diff += x - y
-			case x < y:
-				diff += y - x
+			case v < x:
+				diff += (x - v)
+			case v > x:
+				diff += (v - x)
+			default: // v == x
 			}
 
-			j++
-			i++
-		case f1 > f0:
-			diff += 100
-			j++
-		case f1 < f0:
-			diff += 100
-			i++
+		case opLess:
+			if v > x {
+				diff += (v - x)
+			}
+
+		case opGreater:
+			if v < x {
+				diff += (x - v)
+			}
 		}
 	}
 
-	// Add the remaining elements
-	diff += float32(len(goal.vx)-i) * 100
-	diff += float32(len(state.vx)-j) * 100
 	return diff
 }
 

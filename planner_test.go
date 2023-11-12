@@ -29,6 +29,7 @@ BenchmarkPlan/deep-24         	  380756	      3103 ns/op	     230 B/op	       1 
 BenchmarkPlan/deep-24         	  337836	      3519 ns/op	     230 B/op	       1 allocs/op
 BenchmarkPlan/deep-24         	  420907	      2831 ns/op	     230 B/op	       1 allocs/op
 BenchmarkPlan/deep-24         	  444250	      2716 ns/op	     230 B/op	       1 allocs/op
+BenchmarkPlan/deep-24         	  499970	      2345 ns/op	     211 B/op	       1 allocs/op
 
 BenchmarkPlan/maze-24         	      37	  31458708 ns/op	 2702894 B/op	   80711 allocs/op
 BenchmarkPlan/maze-24         	      63	  18643352 ns/op	 1569536 B/op	   51464 allocs/op
@@ -93,14 +94,14 @@ func TestNumericPlan(t *testing.T) {
 
 	plan, err := Plan(start, goal, actions)
 	assert.NoError(t, err)
-	assert.Equal(t, []string{"Forage", "Forage", "Forage", "Sleep", "Forage", "Forage", "Sleep", "Forage", "Forage", "Forage", "Sleep", "Eat", "Forage"},
+	assert.Equal(t, []string{"Forage", "Forage", "Forage", "Sleep", "Forage", "Forage", "Sleep", "Forage", "Forage", "Forage", "Sleep", "Forage"},
 		planOf(plan))
+
+	//assert.Fail(t, "xxx")
 }
 
 func TestMaze(t *testing.T) {
-	start := StateOf("A")
-	goal := StateOf("Z")
-	actions := []Action{
+	plan, err := Plan(StateOf("A"), StateOf("Z"), []Action{
 		move("A->B"), move("B->C"), move("C->D"), move("D->E"), move("E->F"), move("F->G"),
 		move("G->H"), move("H->I"), move("I->J"), move("C->X1"), move("E->X2"), move("G->X3"),
 		move("X1->D"), move("X2->F"), move("X3->H"), move("B->Y1"), move("D->Y2"), move("F->Y3"),
@@ -108,25 +109,29 @@ func TestMaze(t *testing.T) {
 		move("M->N"), move("N->O"), move("O->P"), move("P->Q"), move("Q->R"), move("R->S"),
 		move("S->T"), move("T->U"), move("U->V"), move("V->W"), move("W->X"), move("X->Y"),
 		move("Y->Z"), move("U->Z1"), move("W->Z2"), move("Z1->V"), move("Z2->X"), move("A->Z3"),
-	}
-
-	plan, err := Plan(start, goal, actions)
+	})
 	assert.NoError(t, err)
 	assert.Equal(t, []string{"A->B", "B->C", "C->D", "D->E", "E->F", "F->G", "G->H", "H->I", "I->J",
 		"J->K", "K->L", "L->M", "M->N", "N->O", "O->P", "P->Q", "Q->R", "R->S", "S->T", "T->U", "U->V",
 		"V->W", "W->X", "X->Y", "Y->Z"},
 		planOf(plan))
+	//assert.Fail(t, "xxx")
+}
+
+func TestWeightedPlan(t *testing.T) {
+	plan, err := Plan(StateOf("A", "B"), StateOf("C", "D"),
+		[]Action{move("A->C"), move("A->D", 0.5), move("B->C"), move("B->D", 0.75)},
+	)
+	assert.NoError(t, err)
+	assert.Equal(t, []string{"A->D", "B->C"}, planOf(plan))
 }
 
 func TestSimplePlan(t *testing.T) {
-	start := StateOf("A", "B")
-	goal := StateOf("C", "D")
-	actions := []Action{move("A->C"), move("A->D"), move("B->C"), move("B->D")}
-
-	plan, err := Plan(start, goal, actions)
+	plan, err := Plan(StateOf("A", "B"), StateOf("C", "D"),
+		[]Action{move("A->C"), move("A->D"), move("B->C"), move("B->D")},
+	)
 	assert.NoError(t, err)
-	assert.Equal(t, []string{"A->C", "B->D"},
-		planOf(plan))
+	assert.Equal(t, []string{"A->C", "B->D"}, planOf(plan))
 }
 
 func TestNoPlanFound(t *testing.T) {
@@ -139,9 +144,13 @@ func TestNoPlanFound(t *testing.T) {
 
 // ------------------------------------ Test Action ------------------------------------
 
-func move(m string) Action {
+func move(m string, w ...float32) Action {
+	if len(w) == 0 {
+		w = append(w, 1.0)
+	}
+
 	arr := strings.Split(m, "->")
-	return actionOf(m, 1, StateOf(arr[0]), StateOf("!"+arr[0], arr[1]))
+	return actionOf(m, w[0], StateOf(arr[0]), StateOf("!"+arr[0], arr[1]))
 }
 
 func planOf(plan []Action) []string {

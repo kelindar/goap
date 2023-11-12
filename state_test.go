@@ -151,19 +151,32 @@ func TestDistance(t *testing.T) {
 		{[]string{"A"}, []string{"A"}, 0},
 		{[]string{"A=100"}, []string{"A=10"}, 90},
 		{[]string{"A=100"}, []string{"A=90"}, 10},
-		{[]string{"A"}, []string{"B"}, 200},
+		{[]string{"A=25"}, []string{"A=50"}, 25},
+		{[]string{"A=0"}, []string{"A=50"}, 50},
+		{[]string{"A=75"}, []string{"A=50"}, 25},
+		{[]string{"A"}, []string{"B"}, 100},
 		{[]string{"A"}, []string{"A", "B"}, 100},
-		{[]string{"A", "B"}, []string{"A"}, 100},
-		{[]string{"A", "B"}, []string{"C", "D"}, 400},
+		{[]string{"A", "B"}, []string{"A"}, 0},
+		{[]string{"A", "B"}, []string{"C", "D"}, 200},
 		{[]string{"A", "B"}, []string{"A", "B"}, 0},
 		{[]string{"A", "B"}, []string{"A", "B", "C"}, 100},
-		{[]string{"A", "B", "C"}, []string{"D", "B"}, 300},
+		{[]string{"A", "B", "C"}, []string{"D", "B"}, 100},
+		{[]string{"A=20"}, []string{"B=10"}, 10},
+		{[]string{"A=20"}, []string{"B=70"}, 70},
+		{[]string{"A=20", "C=40"}, []string{"B=5"}, 5},
+		{[]string{"A=5", "C=40"}, []string{"A=10", "E=40"}, 45},
+		{[]string{"A=10"}, []string{}, 0},
+		{[]string{}, []string{"A=10"}, 10},
+		{[]string{"A=10"}, []string{"A<50"}, 0},
+		{[]string{"A=75"}, []string{"A<50"}, 25},
+		{[]string{"A=10"}, []string{"A>50"}, 40},
+		{[]string{"A=70"}, []string{"A>50"}, 0},
 	}
 
 	for _, test := range tests {
 		state1 := StateOf(test.state1...)
 		state2 := StateOf(test.state2...)
-		assert.Equal(t, test.expect, state1.Distance(state2),
+		assert.InDelta(t, test.expect, state1.Distance(state2), 0.01,
 			"state1=%s, state2=%s", state1, state2)
 	}
 }
