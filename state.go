@@ -302,10 +302,3 @@ func (s *State) Less(i, j int) bool {
 func (s *State) Swap(i, j int) {
 	s.vx[i], s.vx[j] = s.vx[j], s.vx[i]
 }
-
-func abs(x float32) float32 {
-	if x < 0 {
-		return -x
-	}
-	return x
-}
