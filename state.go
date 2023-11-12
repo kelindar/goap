@@ -227,10 +227,23 @@ func (s *State) Apply(effects *State) error {
 
 // Distance estimates the distance to the goal state.
 func (state *State) Distance(goal *State) (diff float32) {
+	i := 0
 	for _, g := range goal.vx {
 		x := g.Expr().Value()
-		v := state.load(g.Fact()).Value()
+		v := float32(0)
 
+		// Find the value in the state
+		for ; i < len(state.vx); i++ {
+			if state.vx[i].Fact() == g.Fact() {
+				v = state.vx[i].Expr().Value()
+				break // Found
+			}
+			if state.vx[i].Fact() < g.Fact() {
+				break // Not found
+			}
+		}
+
+		// Calculate the difference, normalized
 		switch g.Expr().Operator() {
 		case opEqual:
 			switch {
@@ -256,6 +269,8 @@ func (state *State) Distance(goal *State) (diff float32) {
 	if diff == 0 || len(goal.vx) == 0 {
 		return 0
 	}
+
+	// Normalize the difference by the number of elements
 	return diff / float32(len(goal.vx))
 }
 
