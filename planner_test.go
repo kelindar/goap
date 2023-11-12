@@ -96,6 +96,8 @@ func TestNumericPlan(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, []string{"Forage", "Forage", "Forage", "Sleep", "Forage", "Forage", "Sleep", "Forage", "Forage", "Forage", "Sleep", "Forage"},
 		planOf(plan))
+
+	//assert.Fail(t, "xxx")
 }
 
 func TestMaze(t *testing.T) {
@@ -113,6 +115,7 @@ func TestMaze(t *testing.T) {
 		"J->K", "K->L", "L->M", "M->N", "N->O", "O->P", "P->Q", "Q->R", "R->S", "S->T", "T->U", "U->V",
 		"V->W", "W->X", "X->Y", "Y->Z"},
 		planOf(plan))
+	//assert.Fail(t, "xxx")
 }
 
 func TestWeightedPlan(t *testing.T) {

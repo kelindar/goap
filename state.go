@@ -45,6 +45,7 @@ type node struct {
 	stateCost float32 // Cost from the start state to this state
 	totalCost float32 // Sum of cost and heuristic
 	index     int     // Index of the state in the heap
+	depth     int     // Depth of the state in the tree
 	visited   bool    // Whether the state was visited
 }
 
@@ -248,30 +249,25 @@ func (state *State) Distance(goal *State) (diff float32) {
 		case opEqual:
 			switch {
 			case v < x:
-				diff += (x - v) / x
+				diff += (x - v)
 			case v > x:
-				diff += (v - x) / (100 - x)
+				diff += (v - x)
 			default: // v == x
 			}
 
 		case opLess:
 			if v > x {
-				diff += (v - x) / (100 - x)
+				diff += (v - x)
 			}
 
 		case opGreater:
 			if v < x {
-				diff += (x - v) / x
+				diff += (x - v)
 			}
 		}
 	}
 
-	if diff == 0 || len(goal.vx) == 0 {
-		return 0
-	}
-
-	// Normalize the difference by the number of elements
-	return diff / float32(len(goal.vx))
+	return diff
 }
 
 // Equals returns true if the state is equal to the other state.

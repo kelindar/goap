@@ -8,6 +8,8 @@ import (
 	"sync"
 )
 
+const maxDepth = 100
+
 // Action represents an action that can be performed.
 type Action interface {
 
@@ -32,6 +34,14 @@ func Plan(start, goal *State, actions []Action) ([]Action, error) {
 
 	for heap.Len() > 0 {
 		current, _ := heap.Pop()
+
+		/*fmt.Printf("- (%d) %s, cost=%v, heuristic=%v, total=%v\n",
+		current.depth, current.action,
+		current.stateCost, current.heuristic, current.totalCost)*/
+
+		if current.depth >= maxDepth {
+			return reconstructPlan(current), nil
+		}
 
 		// If we reached the goal, reconstruct the path.
 		done, err := current.Match(goal)
@@ -68,14 +78,15 @@ func Plan(start, goal *State, actions []Action) ([]Action, error) {
 				newState.action = action
 				newState.heuristic = heuristic
 				newState.stateCost = newCost
-				newState.totalCost = newCost * heuristic
+				newState.totalCost = newCost + heuristic
+				newState.depth = current.depth + 1
 				heap.Push(newState)
 
 			// In any of those cases, we need to release the new state
 			case found && !node.visited && newCost < node.stateCost:
 				node.parent = current
 				node.stateCost = newCost
-				node.totalCost = newCost * node.heuristic
+				node.totalCost = newCost + node.heuristic
 				heap.Fix(node) // Update the node's position in the heap
 				fallthrough
 			default: // The new state is already visited or the newCost is higher
@@ -89,7 +100,7 @@ func Plan(start, goal *State, actions []Action) ([]Action, error) {
 
 // reconstructPlan reconstructs the plan from the goal node to the start node.
 func reconstructPlan(goalNode *State) []Action {
-	plan := make([]Action, 0, int(goalNode.index))
+	plan := make([]Action, 0, int(goalNode.depth))
 	for n := goalNode; n != nil; n = n.parent {
 		if n.action != nil { // The start node has no action
 			plan = append(plan, n.action)
