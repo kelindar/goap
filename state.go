@@ -225,55 +225,38 @@ func (s *State) Apply(effects *State) error {
 	return nil
 }
 
-// Distance estimates the distance to the goal state as the number of differing keys.
+// Distance estimates the distance to the goal state.
 func (state *State) Distance(goal *State) (diff float32) {
-	i, j := 0, 0
-	for i < len(goal.vx) && j < len(state.vx) {
-		f0 := goal.vx[i].Fact()
-		f1 := state.vx[j].Fact()
-		op := goal.vx[i].Expr().Operator()
+	for _, g := range goal.vx {
+		x := g.Expr().Value()
+		v := state.load(g.Fact()).Value()
 
-		switch {
-		case f1 == f0:
-			v0 := goal.vx[i].Expr()
-			v1 := state.vx[j].Expr()
-
-			switch op {
-			case opEqual:
-				diff += abs(v1.Value() - v0.Value())
-			case opLess:
-				if v1.Value() > v0.Value() {
-					diff += v1.Value() - v0.Value()
-				}
-			case opGreater:
-				if v1.Value() < v0.Value() {
-					diff += v0.Value() - v1.Value()
-				}
+		switch g.Expr().Operator() {
+		case opEqual:
+			switch {
+			case v < x:
+				diff += (x - v) / x
+			case v > x:
+				diff += (v - x) / (100 - x)
+			default: // v == x
 			}
 
-			j++
-			i++
-		case f1 < f0: // Goal has a key that the state doesn't
-			switch op {
-			case opEqual, opGreater:
-				diff += goal.vx[i].Expr().Value()
+		case opLess:
+			if v > x {
+				diff += (v - x) / (100 - x)
 			}
-			i++
-		case f1 > f0: // State has a key that the goal doesn't
-			j++
+
+		case opGreater:
+			if v < x {
+				diff += (x - v) / x
+			}
 		}
 	}
 
-	// Add the remaining elements
-	for ; i < len(goal.vx); i++ {
-		r := goal.vx[i]
-		switch r.Expr().Operator() {
-		case opEqual, opGreater:
-			diff += r.Expr().Value()
-		}
+	if diff == 0 || len(goal.vx) == 0 {
+		return 0
 	}
-
-	return diff
+	return diff / float32(len(goal.vx))
 }
 
 // Equals returns true if the state is equal to the other state.

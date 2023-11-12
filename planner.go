@@ -68,14 +68,14 @@ func Plan(start, goal *State, actions []Action) ([]Action, error) {
 				newState.action = action
 				newState.heuristic = heuristic
 				newState.stateCost = newCost
-				newState.totalCost = newCost + (heuristic / float32(len(goal.vx)))
+				newState.totalCost = newCost * heuristic
 				heap.Push(newState)
 
 			// In any of those cases, we need to release the new state
 			case found && !node.visited && newCost < node.stateCost:
 				node.parent = current
 				node.stateCost = newCost
-				node.totalCost = newCost + (node.heuristic / float32(len(goal.vx)))
+				node.totalCost = newCost * node.heuristic
 				heap.Fix(node) // Update the node's position in the heap
 				fallthrough
 			default: // The new state is already visited or the newCost is higher
