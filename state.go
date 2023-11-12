@@ -10,7 +10,7 @@ import (
 	"sync"
 )
 
-const linearCutoff = 8 // 1 cache line
+const linearCutoff = 16 // 2 cache line
 
 var pool = sync.Pool{
 	New: func() any {
@@ -231,32 +231,48 @@ func (state *State) Distance(goal *State) (diff float32) {
 	for i < len(goal.vx) && j < len(state.vx) {
 		f0 := goal.vx[i].Fact()
 		f1 := state.vx[j].Fact()
+		op := goal.vx[i].Expr().Operator()
 
 		switch {
 		case f1 == f0:
-			x := goal.vx[i].Expr().Value()
-			y := state.vx[j].Expr().Value()
-			switch {
-			case x > y:
-				diff += x - y
-			case x < y:
-				diff += y - x
+			v0 := goal.vx[i].Expr()
+			v1 := state.vx[j].Expr()
+
+			switch op {
+			case opEqual:
+				diff += abs(v1.Value() - v0.Value())
+			case opLess:
+				if v1.Value() > v0.Value() {
+					diff += v1.Value() - v0.Value()
+				}
+			case opGreater:
+				if v1.Value() < v0.Value() {
+					diff += v0.Value() - v1.Value()
+				}
 			}
 
 			j++
 			i++
-		case f1 > f0:
-			diff += 100
-			j++
-		case f1 < f0:
-			diff += 100
+		case f1 < f0: // Goal has a key that the state doesn't
+			switch op {
+			case opEqual, opGreater:
+				diff += goal.vx[i].Expr().Value()
+			}
 			i++
+		case f1 > f0: // State has a key that the goal doesn't
+			j++
 		}
 	}
 
 	// Add the remaining elements
-	diff += float32(len(goal.vx)-i) * 100
-	diff += float32(len(state.vx)-j) * 100
+	for ; i < len(goal.vx); i++ {
+		r := goal.vx[i]
+		switch r.Expr().Operator() {
+		case opEqual, opGreater:
+			diff += r.Expr().Value()
+		}
+	}
+
 	return diff
 }
 
@@ -302,4 +318,11 @@ func (s *State) Less(i, j int) bool {
 // Swap swaps the elements with indexes i and j.
 func (s *State) Swap(i, j int) {
 	s.vx[i], s.vx[j] = s.vx[j], s.vx[i]
+}
+
+func abs(x float32) float32 {
+	if x < 0 {
+		return -x
+	}
+	return x
 }

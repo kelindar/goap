@@ -24,7 +24,6 @@ func Plan(start, goal *State, actions []Action) ([]Action, error) {
 	start = start.Clone()
 	start.node = node{
 		heuristic: start.Distance(goal),
-		stateCost: 0,
 	}
 
 	heap := acquireHeap()
@@ -59,8 +58,6 @@ func Plan(start, goal *State, actions []Action) ([]Action, error) {
 				return nil, err
 			}
 
-			//fmt.Printf("Action: %s, State: %s, New: %s\n", action.String(), current.String(), newState.String())
-
 			// Check if newState is already planned to be visited or if the newCost is lower
 			newCost := current.stateCost + action.Cost()
 			node, found := heap.Find(newState.Hash())
@@ -71,14 +68,14 @@ func Plan(start, goal *State, actions []Action) ([]Action, error) {
 				newState.action = action
 				newState.heuristic = heuristic
 				newState.stateCost = newCost
-				newState.totalCost = newCost + heuristic
+				newState.totalCost = newCost + (heuristic / float32(len(goal.vx)))
 				heap.Push(newState)
 
 			// In any of those cases, we need to release the new state
 			case found && !node.visited && newCost < node.stateCost:
 				node.parent = current
 				node.stateCost = newCost
-				node.totalCost = newCost + node.heuristic
+				node.totalCost = newCost + (node.heuristic / float32(len(goal.vx)))
 				heap.Fix(node) // Update the node's position in the heap
 				fallthrough
 			default: // The new state is already visited or the newCost is higher

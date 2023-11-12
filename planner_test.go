@@ -29,6 +29,7 @@ BenchmarkPlan/deep-24         	  380756	      3103 ns/op	     230 B/op	       1 
 BenchmarkPlan/deep-24         	  337836	      3519 ns/op	     230 B/op	       1 allocs/op
 BenchmarkPlan/deep-24         	  420907	      2831 ns/op	     230 B/op	       1 allocs/op
 BenchmarkPlan/deep-24         	  444250	      2716 ns/op	     230 B/op	       1 allocs/op
+BenchmarkPlan/deep-24         	  499970	      2345 ns/op	     211 B/op	       1 allocs/op
 
 BenchmarkPlan/maze-24         	      37	  31458708 ns/op	 2702894 B/op	   80711 allocs/op
 BenchmarkPlan/maze-24         	      63	  18643352 ns/op	 1569536 B/op	   51464 allocs/op
@@ -93,7 +94,7 @@ func TestNumericPlan(t *testing.T) {
 
 	plan, err := Plan(start, goal, actions)
 	assert.NoError(t, err)
-	assert.Equal(t, []string{"Forage", "Forage", "Forage", "Sleep", "Forage", "Forage", "Sleep", "Forage", "Forage", "Forage", "Sleep", "Eat", "Forage"},
+	assert.Equal(t, []string{"Forage", "Forage", "Forage", "Sleep", "Forage", "Forage", "Sleep", "Forage", "Forage", "Forage", "Sleep", "Forage"},
 		planOf(plan))
 }
 
