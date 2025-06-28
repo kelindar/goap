@@ -1,5 +1,5 @@
 <p align="center">
-<img width="270" height="110" src=".github/logo.png" border="0" alt="kelindar/goap">
+<img width="300" height="100" src=".github/logo.png" border="0" alt="kelindar/goap">
 <br>
 <img src="https://img.shields.io/github/go-mod/go-version/kelindar/goap" alt="Go Version">
 <a href="https://pkg.go.dev/github.com/kelindar/goap"><img src="https://pkg.go.dev/badge/github.com/kelindar/goap" alt="PkgGoDev"></a>
